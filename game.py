@@ -102,19 +102,19 @@ class DungeonGameGUI:
         self.score_label.pack(pady=5)
 
         self.swing_canvas = tk.Canvas(root, width=200, height=100, bg="white")
-        self.swing_bar = self.swing_canvas.create_rectangle(10, 30, 20, 70, fill="#0000FF", width=0, outline="")
         self.target_zone = self.swing_canvas.create_rectangle(150, 15, 200, 85, fill="red")
-        self.perfect_zone = self.swing_canvas.create_rectangle(175, 25, 185, 75, fill="green", outline="")
+        self.perfect_zone = self.swing_canvas.create_rectangle(172, 25, 178, 75, fill="#52D305", outline="")
+        self.swing_bar = self.swing_canvas.create_rectangle(10, 30, 20, 70, fill="#0000FF", width=0, outline="")
         self.swing_canvas.pack(pady=10)
 
-        self.controls_label = tk.Label(root, text="Controls:\nAttack: Z\nHeal: H\nFireball: X (30 Coins)", font=("Helvetica", 12))
+        self.controls_label = tk.Label(root, text="Controls:\nAttack: Z\nHeal: H\nFireball: X", font=("Helvetica", 12))
         self.controls_label.pack(side=tk.RIGHT, padx=20)
 
         self.action_frame = tk.Frame(root)
         self.attack_button = tk.Button(self.action_frame, text="Attack", command=self.start_swing, bg="lightblue")
         self.heal_button = tk.Button(self.action_frame, text="Heal", command=self.heal, bg="lightgoldenrodyellow")
         self.shop_button = tk.Button(self.action_frame, text="Shop", command=self.show_shop, state="disabled", bg="grey")
-        self.skip_button = tk.Button(self.action_frame, text="Skip", command=self.skip_encounter, state="disabled", bg="grey")
+        self.skip_button = tk.Button(self.action_frame, text="Continue", command=self.continue_encounter, state="disabled", bg="grey")
         self.attack_button.grid(row=0, column=0, padx=5)
         self.heal_button.grid(row=0, column=1, padx=5)
         self.shop_button.grid(row=0, column=2, padx=5)
@@ -169,11 +169,12 @@ class DungeonGameGUI:
         self.update_stats()
         self.display_message(f"A {self.enemy.name} has appeared!\n{self.enemy.art}")
         self.shop_button.config(state="disabled")
-        self.skip_button.config(state="normal")
+        self.skip_button.config(state="disabled")
 
     def find_treasure(self):
         found_coins = random.randint(10, 20)
         self.player.coins += found_coins
+        winsound.PlaySound("pickupCoin.wav", winsound.SND_ASYNC)
         self.display_message(f"You found a treasure chest! You collected {found_coins} coins.")
         self.update_stats()
         self.show_shop()
@@ -216,6 +217,7 @@ class DungeonGameGUI:
             swing_x1, _, swing_x2, _ = self.swing_canvas.coords(self.swing_bar)
             target_x1, _, target_x2, _ = self.swing_canvas.coords(self.target_zone)
             perfect_x1, _, perfect_x2, _ = self.swing_canvas.coords(self.perfect_zone)
+            winsound.PlaySound("attack.wav", winsound.SND_ASYNC)
             if perfect_x1 <= swing_x1 <= perfect_x2 or perfect_x1 <= swing_x2 <= perfect_x2:
                 damage = int(self.player.attack_power * 1.5)
                 self.display_message(f"Perfect hit! You dealt {damage} damage!")
@@ -225,7 +227,6 @@ class DungeonGameGUI:
             else:
                 damage = int(self.player.attack_power * 0.5)
                 self.display_message(f"Missed timing! You dealt only {damage} damage!")
-            winsound.PlaySound("attack.wav", winsound.SND_ASYNC)
             self.enemy.health -= damage
             self.update_stats()
             if self.enemy.health <= 0:
@@ -303,7 +304,7 @@ class DungeonGameGUI:
             buy_fireball_button.pack(pady=5)
             buy_nothing_button.pack(pady=5)
 
-            shop_window.protocol("WM_DELETE_WINDOW", lambda: shop_window.destroy())
+            shop_window.protocol("WM_DELETE_WINDOW", lambda: self.on_shop_close(shop_window))
         else:
             self.display_message("You can't shop while fighting an enemy!")
 
@@ -321,6 +322,10 @@ class DungeonGameGUI:
             self.display_message("Not enough coins!")
         self.update_stats()
 
+    def on_shop_close(self, shop_window):
+        shop_window.destroy()
+        self.trigger_event()
+
     def display_message(self, message):
         message_window = tk.Toplevel(self.root)
         message_window.title("Message")
@@ -333,16 +338,13 @@ class DungeonGameGUI:
         ok_button.pack(pady=10)
 
         message_window.protocol("WM_DELETE_WINDOW", lambda: message_window.destroy())
+        message_window.wait_window()  # Wait for the message window to close
 
-    def skip_encounter(self):
-        if self.enemy:
-            self.enemy = None
-            self.update_stats()
-            self.trigger_event()
-            self.shop_button.config(state="normal")
-            self.skip_button.config(state="disabled")
+    def continue_encounter(self):
+        if not self.enemy:
+            self.trigger_event()  # Trigger the next event if there's no enemy
         else:
-            self.display_message("There's nothing to skip right now.")
+            self.display_message("You can't continue while fighting an enemy!")
 
 if __name__ == "__main__":
     root = tk.Tk()
