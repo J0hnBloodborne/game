@@ -29,8 +29,8 @@ class Player:
         return False
 
     def buy_fireball(self):
-        if self.coins >= 20:
-            self.coins -= 20
+        if self.coins >= 30:
+            self.coins -= 30
             self.fireball_charges += 1
             return True
         return False
@@ -38,9 +38,9 @@ class Player:
 class Enemy:
     def __init__(self, name, art, health, attack_power):
         self.name = name
+        self.art = art
         self.health = health
         self.attack_power = attack_power
-        self.art = art
 
     def attack(self, player):
         damage = random.randint(5, self.attack_power)
@@ -54,6 +54,10 @@ class Enemy:
             return random.randint(10, 15)
         elif self.name == "Troll":
             return random.randint(15, 20)
+        elif self.name.lower() == "skeleton":
+            return random.randint(8, 12)
+        elif self.name.lower() == "zombie":
+            return random.randint(12, 18)
         else:
             return random.randint(5, 10)
 
@@ -61,7 +65,7 @@ class DungeonGameGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Dungeon Master RPG")
-        self.root.geometry("800x550")
+        self.root.geometry("1000x600")
 
         self.player = None
         self.enemy = None
@@ -69,7 +73,7 @@ class DungeonGameGUI:
         self.swinging = False
         self.swing_direction = 1
         self.swing_position = 10
-        self.target_range = 30
+        self.target_range = 45
 
         # UI Elements
         self.intro_label = tk.Label(root, text="Welcome to the Dungeon RPG!", font=("Helvetica", 18))
@@ -90,38 +94,39 @@ class DungeonGameGUI:
         self.player_stats_label.grid(row=0, column=0, padx=10)
         self.enemy_stats_label.grid(row=0, column=1, padx=10)
 
-        self.status_label = tk.Label(root, text="", font=("Helvetica", 14), wraplength=600)
+        self.status_label = tk.Label(root, text="", font=("Helvetica", 14), wraplength=800)
         self.status_label.pack(pady=10)
 
         self.score_label = tk.Label(root, text="Score: 0", font=("Helvetica", 14))
         self.score_label.pack(pady=5)
 
-        self.swing_canvas = tk.Canvas(root, width=300, height=50, bg="white")
-        self.swing_bar = self.swing_canvas.create_rectangle(10, 15, 20, 35, fill="#0000FF", width=0)
-        self.target_zone = self.swing_canvas.create_rectangle(140, 10, 160, 40, fill="red")
+        self.swing_canvas = tk.Canvas(root, width=400, height=100, bg="white")
+        self.swing_bar = self.swing_canvas.create_rectangle(10, 20, 30, 80, fill="#0000FF", width=0, outline="")
+        self.target_zone = self.swing_canvas.create_rectangle(170, 15, 230, 85, fill="red")
+        self.perfect_zone = self.swing_canvas.create_rectangle(195, 25, 205, 75, fill="green", outline="")
         self.swing_canvas.pack(pady=10)
 
-        self.controls_label = tk.Label(root, text="Controls:\nAttack: Z\nHeal: H\nFireball: X", font=("Helvetica", 12))
+        self.controls_label = tk.Label(root, text="Controls:\nAttack: Z\nHeal: H\nFireball: X (30 Coins)", font=("Helvetica", 12))
         self.controls_label.pack(side=tk.RIGHT, padx=20)
-
-        root.bind("<z>", self.check_timing)
-        root.bind("<x>", self.use_fireball)
 
         self.action_frame = tk.Frame(root)
         self.attack_button = tk.Button(self.action_frame, text="Attack", command=self.start_swing, bg="lightblue")
         self.heal_button = tk.Button(self.action_frame, text="Heal", command=self.heal, bg="lightgoldenrodyellow")
-        self.fireball_button = tk.Button(self.action_frame, text="Fireball (20 Coins)", command=self.use_fireball, bg="orange")
+        self.shop_button = tk.Button(self.action_frame, text="Shop", command=self.show_shop, state="disabled", bg="grey")
         self.attack_button.grid(row=0, column=0, padx=5)
         self.heal_button.grid(row=0, column=1, padx=5)
-        self.fireball_button.grid(row=0, column=2, padx=5)
+        self.shop_button.grid(row=0, column=2, padx=5)
+
+        self.root.bind("<z>", self.check_timing)
+        self.root.bind("<x>", self.use_fireball)
 
     def start_game(self):
         name = self.name_entry.get()
         if not name:
-            messagebox.showwarning("Warning", "Please enter your name!")
+            self.display_message("Please enter your name!")
             return
         self.player = Player(name)
-        self.status_label.config(text=f"Welcome {self.player.name}! Your adventure begins...")
+        self.display_message(f"Welcome {self.player.name}! Your adventure begins...")
 
         self.name_label.pack_forget()
         self.name_entry.pack_forget()
@@ -132,33 +137,47 @@ class DungeonGameGUI:
         self.trigger_event()
 
     def trigger_event(self):
-        if random.random() < 0.7:
+        if self.player.health <= 0:
+            # Game Over
+            return
+        encounter_type = random.choices(["enemy", "treasure", "nothing", "funny"], weights=[5, 1, 1, 1])[0]
+        if encounter_type == "enemy":
             self.encounter_enemy()
+        elif encounter_type == "treasure":
+            self.find_treasure()
+        elif encounter_type == "nothing":
+            self.display_message("You encountered nothing of note...")
         else:
-            self.random_encounter()
+            self.funny_encounter()
 
     def encounter_enemy(self):
         enemy_data = [
-            {"name": "Goblin", "art": "  /\\_/\\  \n ( o.o )\n  > ^ < ", "health": 80, "attack_power": 15},
-            {"name": "Orc", "art": "  /\\_/\\  \n ( o.o )\n ( v v ) ", "health": 100, "attack_power": 20},
-            {"name": "Troll", "art": " /\\_/\\\n  (._.)\n  /   \\", "health": 120, "attack_power": 25},
-            {"name": "Skeleton", "art": " /\\_/\\\n ( x x )\n /   \\", "health": 90, "attack_power": 18},
-            {"name": "Zombie", "art": " /\\_/\\\n (._.)\n /   \\", "health": 110, "attack_power": 22}
+            {"name": "Goblin", "art": " .--.  \n/    \\\n| () |\n \\__/ ", "health": 80, "attack_power": 15},
+            {"name": "Orc", "art": " .--. \n/    \\\n| () |\n `--' ", "health": 100, "attack_power": 20},
+            {"name": "Troll", "art": " .--. \n/    \\\n| uu |\n `--' ", "health": 120, "attack_power": 25},
+            {"name": "Skeleton", "art": " .--. \n/    \\\n| xx |\n `--' ", "health": 90, "attack_power": 18},
+            {"name": "Zombie", "art": " .--. \n/    \\\n| oo |\n `--' ", "health": 110, "attack_power": 22}
         ]
         enemy_choice = random.choice(enemy_data)
         self.enemy = Enemy(enemy_choice["name"], enemy_choice["art"], enemy_choice["health"], enemy_choice["attack_power"])
-        self.status_label.config(text=f"An enemy {self.enemy.name} appears with {self.enemy.health} health!\n{self.enemy.art}")
         self.update_stats()
+        self.display_message(f"A {self.enemy.name} has appeared!\n{self.enemy.art}")
 
-    def random_encounter(self):
-        encounter_type = random.choice(["treasure", "nothing"])
-        if encounter_type == "treasure":
-            found_coins = random.randint(10, 20)
-            self.player.coins += found_coins
-            self.status_label.config(text=f"You found a treasure chest! You collected {found_coins} coins.")
-        else:
-            self.status_label.config(text="You encountered nothing of note...")
+    def find_treasure(self):
+        found_coins = random.randint(10, 20)
+        self.player.coins += found_coins
+        self.display_message(f"You found a treasure chest! You collected {found_coins} coins.")
+        self.update_stats()
+        self.show_shop()
 
+    def funny_encounter(self):
+        funny_encounters = [
+            "You trip over a rock and fall on your face. How embarrassing...",
+            "A small dragon hiccups, accidentally setting your hair on fire. Luckily, it goes out quickly.",
+            "You accidentally step in a puddle, splashing mud all over your clothes. Nice look!",
+            "A curious squirrel steals your snack while you're not looking. Rude!"
+        ]
+        self.display_message(random.choice(funny_encounters))
         self.update_stats()
         self.show_shop()
 
@@ -168,16 +187,17 @@ class DungeonGameGUI:
             self.swing_position = 10
             self.swing_direction = 1
             self.update_swing_bar()
+            self.shop_button.config(state="disabled")
 
     def update_swing_bar(self):
         if self.swinging:
             if self.swing_position <= 10:
                 self.swing_direction = 1
-            elif self.swing_position >= 290:
+            elif self.swing_position >= 390:
                 self.swing_direction = -1
 
             self.swing_position += self.swing_direction * 6
-            self.swing_canvas.coords(self.swing_bar, self.swing_position, 15, self.swing_position + 10, 35)
+            self.swing_canvas.coords(self.swing_bar, self.swing_position, 20, self.swing_position + 20, 80)
 
             self.root.after(16, self.update_swing_bar)
 
@@ -186,12 +206,16 @@ class DungeonGameGUI:
             self.swinging = False
             swing_x1, _, swing_x2, _ = self.swing_canvas.coords(self.swing_bar)
             target_x1, _, target_x2, _ = self.swing_canvas.coords(self.target_zone)
-            if target_x1 <= swing_x1 <= target_x2 or target_x1 <= swing_x2 <= target_x2:
+            perfect_x1, _, perfect_x2, _ = self.swing_canvas.coords(self.perfect_zone)
+            if perfect_x1 <= swing_x1 <= perfect_x2 or perfect_x1 <= swing_x2 <= perfect_x2:
+                damage = int(self.player.attack_power * 1.5)
+                self.display_message(f"Perfect hit! You dealt {damage} damage!")
+            elif target_x1 <= swing_x1 <= target_x2 or target_x1 <= swing_x2 <= target_x2:
                 damage = self.player.attack_power
-                self.status_label.config(text=f"Perfect hit! You dealt {damage} damage!")
+                self.display_message(f"Good hit! You dealt {damage} damage!")
             else:
                 damage = int(self.player.attack_power * 0.5)
-                self.status_label.config(text=f"Missed timing! You dealt only {damage} damage.")
+                self.display_message(f"Missed timing! You dealt only {damage} damage.")
             winsound.PlaySound("attack.wav", winsound.SND_ASYNC)
             self.enemy.health -= damage
             self.update_stats()
@@ -199,12 +223,12 @@ class DungeonGameGUI:
                 winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
                 coins_dropped = self.enemy.drop_coins()
                 self.player.coins += coins_dropped
-                self.status_label.config(text=f"{self.enemy.name} has been defeated! You collected {coins_dropped} coins.")
+                self.display_message(f"{self.enemy.name} has been defeated! You collected {coins_dropped} coins.")
                 self.score += 10
                 self.score_label.config(text=f"Score: {self.score}")
                 self.enemy = None
                 self.update_stats()
-                self.show_shop()
+                self.shop_button.config(state="normal")
             else:
                 self.enemy_turn()
 
@@ -214,71 +238,93 @@ class DungeonGameGUI:
             self.enemy.health = 0
             coins_dropped = self.enemy.drop_coins() * 2
             self.player.coins += coins_dropped
-            self.status_label.config(text=f"You incinerated the {self.enemy.name} with a fireball! You collected {coins_dropped} coins.")
+            self.display_message(f"You incinerated the {self.enemy.name} with a fireball! You collected {coins_dropped} coins.")
             self.player.fireball_charges -= 1
             self.score += 20
             self.score_label.config(text=f"Score: {self.score}")
+            winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
             self.enemy = None
             self.update_stats()
-            self.show_shop()
+            self.shop_button.config(state="normal")
         else:
-            self.status_label.config(text="You don't have any fireball charges left!")
+            self.display_message("You don't have any fireball charges left!")
 
     def heal(self):
         heal_amount = self.player.heal()
         if heal_amount == "No Potions":
-            self.status_label.config(text="You're out of healing potions!")
+            self.display_message("You're out of healing potions!")
         else:
             winsound.PlaySound("heal.wav", winsound.SND_ASYNC)
-            self.status_label.config(text=f"You healed {heal_amount} health!")
+            self.display_message(f"You healed {heal_amount} health!")
         self.update_stats()
 
     def enemy_turn(self):
         damage = self.enemy.attack(self.player)
-        self.status_label.config(text=f"The {self.enemy.name} attacks and deals {damage} damage!")
+        self.display_message(f"The {self.enemy.name} attacks and deals {damage} damage!")
         self.update_stats()
+        self.shop_button.config(state="disabled")
 
     def update_stats(self):
         self.player_stats_label.config(text=f"{self.player.name} - Health: {self.player.health} | Potions: {self.player.healing_potions} | Coins: {self.player.coins} | Fireballs: {self.player.fireball_charges}")
         if self.enemy:
-            self.enemy_stats_label.config(text=f"{self.enemy.name} - Health: {self.enemy.health}")
+            self.enemy_stats_label.config(text=f"{self.enemy.name} - Health: {self.enemy.health}\n{self.enemy.art}")
+            self.shop_button.config(state="disabled")
         else:
             self.enemy_stats_label.config(text="")
+            self.shop_button.config(state="normal")
 
     def show_shop(self):
-        shop_window = tk.Toplevel(self.root)
-        shop_window.title("Dungeon Shop")
+        if self.enemy is None:
+            shop_window = tk.Toplevel(self.root)
+            shop_window.title("Dungeon Shop")
+            shop_window.geometry("400x150+{}+{}".format(int(self.root.winfo_width()/2 - 200), int(self.root.winfo_height()/2 - 75)))
 
-        tk.Label(shop_window, text="Welcome to the Dungeon Shop!").pack(pady=10)
+            shop_label = tk.Label(shop_window, text="Welcome to the Dungeon Shop!")
+            shop_label.pack(pady=10)
 
-        buy_potion_button = tk.Button(shop_window, text="Buy Healing Potion (10 Coins)", command=self.buy_healing_potion)
-        buy_fireball_button = tk.Button(shop_window, text="Buy Fireball (20 Coins)", command=self.buy_fireball)
-        buy_nothing_button = tk.Button(shop_window, text="Buy Nothing", command=self.on_shop_close(shop_window))
-        buy_potion_button.pack(pady=5)
-        buy_fireball_button.pack(pady=5)
-        buy_nothing_button.pack(pady=5)
+            buy_potion_button = tk.Button(shop_window, text="Buy Healing Potion (10 Coins)", command=self.buy_healing_potion)
+            buy_fireball_button = tk.Button(shop_window, text="Buy Fireball (30 Coins)", command=self.buy_fireball)
+            buy_nothing_button = tk.Button(shop_window, text="Buy Nothing", command=lambda: self.on_shop_close(shop_window))
+            buy_potion_button.pack(pady=5)
+            buy_fireball_button.pack(pady=5)
+            buy_nothing_button.pack(pady=5)
 
-        shop_window.protocol("WM_DELETE_WINDOW", self.on_shop_close(shop_window))
+            shop_window.protocol("WM_DELETE_WINDOW", lambda: self.on_shop_close(shop_window))
+        else:
+            self.display_message("You can't shop while fighting an enemy!")
 
     def buy_healing_potion(self):
         if self.player.buy_healing_potion():
-            self.status_label.config(text="You bought a healing potion!")
+            self.display_message("You bought a healing potion!")
         else:
-            self.status_label.config(text="Not enough coins!")
+            self.display_message("Not enough coins!")
         self.update_stats()
 
     def buy_fireball(self):
         if self.player.buy_fireball():
-            self.status_label.config(text="You bought a fireball!")
+            self.display_message("You bought a fireball!")
         else:
-            self.status_label.config(text="Not enough coins!")
+            self.display_message("Not enough coins!")
         self.update_stats()
 
+    def display_message(self, message):
+        message_window = tk.Toplevel(self.root)
+        message_window.title("Message")
+        message_window.geometry("400x150+{}+{}".format(int(self.root.winfo_width()/2 - 200), int(self.root.winfo_height()/2 - 75)))
+
+        message_label = tk.Label(message_window, text=message, font=("Helvetica", 14), wraplength=350)
+        message_label.pack(pady=20)
+
+        ok_button = tk.Button(message_window, text="OK", command=lambda: self.on_message_close(message_window))
+        ok_button.pack(pady=10)
+
+    def on_message_close(self, message_window):
+        message_window.destroy()
+
     def on_shop_close(self, shop_window):
-        def close_shop():
-            shop_window.destroy()
-            self.trigger_event()
-        return close_shop
+        shop_window.destroy()
+        self.trigger_event()
+        self.shop_button.config(state="normal")
 
 if __name__ == "__main__":
     root = tk.Tk()
