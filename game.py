@@ -76,7 +76,6 @@ class DungeonGameGUI:
         self.target_range = 45
         self.encounter_ongoing = False
 
-        # UI Elements
         self.intro_label = tk.Label(root, text="Welcome to the Dungeon RPG!", font=("Helvetica", 18))
         self.intro_label.pack(pady=10)
 
@@ -101,10 +100,10 @@ class DungeonGameGUI:
         self.score_label = tk.Label(root, text="Score: 0", font=("Helvetica", 14))
         self.score_label.pack(pady=5)
 
-        self.swing_canvas = tk.Canvas(root, width=200, height=100, bg="white")
-        self.target_zone = self.swing_canvas.create_rectangle(150, 15, 200, 85, fill="red")
-        self.perfect_zone = self.swing_canvas.create_rectangle(172, 25, 178, 75, fill="#52D305", outline="")
-        self.swing_bar = self.swing_canvas.create_rectangle(10, 30, 20, 70, fill="#0000FF", width=0, outline="")
+        self.swing_canvas = tk.Canvas(root, width=400, height=100, bg="white")
+        self.target_zone = self.swing_canvas.create_rectangle(140, 15, 210, 85, fill="red", state="hidden")
+        self.perfect_zone = self.swing_canvas.create_rectangle(170, 25, 180, 75, fill="#52D305", outline="", state="hidden")
+        self.swing_bar = self.swing_canvas.create_rectangle(13, 30, 17, 70, fill="#0000FF", width=0, outline="",state="hidden")
         self.swing_canvas.pack(pady=10)
 
         self.controls_label = tk.Label(root, text="Controls:\nAttack: Z\nHeal: H\nFireball: X", font=("Helvetica", 12))
@@ -141,17 +140,14 @@ class DungeonGameGUI:
 
     def trigger_event(self):
         if self.player.health <= 0:
-            # Game Over
             return
         if not self.encounter_ongoing:
             self.encounter_ongoing = True
-            encounter_type = random.choices(["enemy", "treasure", "nothing", "funny"], weights=[5, 1, 1, 1])[0]
+            encounter_type = random.choices(["enemy", "treasure", "funny"], weights=[5, 1, 1])[0]
             if encounter_type == "enemy":
                 self.encounter_enemy()
             elif encounter_type == "treasure":
                 self.find_treasure()
-            elif encounter_type == "nothing":
-                self.display_message("You encountered nothing of note...")
             else:
                 self.funny_encounter()
             self.encounter_ongoing = False
@@ -177,7 +173,6 @@ class DungeonGameGUI:
         winsound.PlaySound("pickupCoin.wav", winsound.SND_ASYNC)
         self.display_message(f"You found a treasure chest! You collected {found_coins} coins.")
         self.update_stats()
-        self.show_shop()
 
     def funny_encounter(self):
         funny_encounters = [
@@ -188,13 +183,15 @@ class DungeonGameGUI:
         ]
         self.display_message(random.choice(funny_encounters))
         self.update_stats()
-        self.show_shop()
 
     def start_swing(self):
         if self.enemy:
             self.swinging = True
             self.swing_position = 10
             self.swing_direction = 1
+            self.swing_canvas.itemconfig(self.target_zone, state="normal")
+            self.swing_canvas.itemconfig(self.perfect_zone, state="normal")
+            self.swing_canvas.itemconfig(self.swing_bar, state="normal")
             self.update_swing_bar()
             self.shop_button.config(state="disabled")
             self.skip_button.config(state="disabled")
@@ -206,8 +203,11 @@ class DungeonGameGUI:
             elif self.swing_position >= 390:
                 self.swing_direction = -1
 
-            self.swing_position += self.swing_direction * 6
-            self.swing_canvas.coords(self.swing_bar, self.swing_position, 20, self.swing_position + 20, 80)
+            self.swing_position += self.swing_direction * 5
+            bar_width = 4
+            bar_top = 30
+            bar_bottom = 70
+            self.swing_canvas.coords(self.swing_bar, self.swing_position, bar_top, self.swing_position + bar_width, bar_bottom)
 
             self.root.after(16, self.update_swing_bar)
 
@@ -218,7 +218,11 @@ class DungeonGameGUI:
             target_x1, _, target_x2, _ = self.swing_canvas.coords(self.target_zone)
             perfect_x1, _, perfect_x2, _ = self.swing_canvas.coords(self.perfect_zone)
             winsound.PlaySound("attack.wav", winsound.SND_ASYNC)
-            if perfect_x1 <= swing_x1 <= perfect_x2 or perfect_x1 <= swing_x2 <= perfect_x2:
+            swing_center = (swing_x1 + swing_x2) / 2
+            self.swing_canvas.itemconfig(self.target_zone, state="hidden")
+            self.swing_canvas.itemconfig(self.perfect_zone, state="hidden")
+            self.swing_canvas.itemconfig(self.swing_bar, state="hidden")
+            if perfect_x1 <= swing_center <= perfect_x2:
                 damage = int(self.player.attack_power * 1.5)
                 self.display_message(f"Perfect hit! You dealt {damage} damage!")
             elif target_x1 <= swing_x1 <= target_x2 or target_x1 <= swing_x2 <= target_x2:
@@ -239,7 +243,7 @@ class DungeonGameGUI:
                 self.enemy = None
                 self.update_stats()
                 self.shop_button.config(state="normal")
-                self.skip_button.config(state="disabled")
+                self.skip_button.config(state="normal")
             else:
                 self.enemy_turn()
 
@@ -282,11 +286,11 @@ class DungeonGameGUI:
         if self.enemy:
             self.enemy_stats_label.config(text=f"{self.enemy.name} - Health: {self.enemy.health}\n{self.enemy.art}")
             self.shop_button.config(state="disabled")
-            self.skip_button.config(state="normal")
+            self.skip_button.config(state="disabled")
         else:
             self.enemy_stats_label.config(text="")
             self.shop_button.config(state="normal")
-            self.skip_button.config(state="disabled")
+            self.skip_button.config(state="normal")
 
     def show_shop(self):
         if self.enemy is None:
@@ -324,7 +328,6 @@ class DungeonGameGUI:
 
     def on_shop_close(self, shop_window):
         shop_window.destroy()
-        self.trigger_event()
 
     def display_message(self, message):
         message_window = tk.Toplevel(self.root)
@@ -338,11 +341,11 @@ class DungeonGameGUI:
         ok_button.pack(pady=10)
 
         message_window.protocol("WM_DELETE_WINDOW", lambda: message_window.destroy())
-        message_window.wait_window()  # Wait for the message window to close
+        message_window.wait_window()
 
     def continue_encounter(self):
         if not self.enemy:
-            self.trigger_event()  # Trigger the next event if there's no enemy
+            self.trigger_event()
         else:
             self.display_message("You can't continue while fighting an enemy!")
 
