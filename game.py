@@ -2,7 +2,12 @@ import tkinter as tk
 import random
 import winsound
 from tkinter import messagebox
-
+import nltk
+from nltk.corpus import wordnet
+nltk.download("wordnet")
+nltk.download("omw-1.4")
+print([lemma.name() for syn in wordnet.synsets("hole") for lemma in syn.lemmas()])
+print([lemma.name() for syn in wordnet.synsets("head") for lemma in syn.lemmas()])
 class Player:
     def __init__(self, name):
         self.name = name
@@ -35,6 +40,7 @@ class Player:
             return True
         return False
 
+
 class Enemy:
     def __init__(self, name, art, health, attack_power):
         self.name = name
@@ -61,11 +67,12 @@ class Enemy:
         else:
             return random.randint(5, 10)
 
+
 class DungeonGameGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Dungeon Master RPG")
-        self.root.geometry("1000x600")
+        self.root.geometry("1000x1000")
 
         self.player = None
         self.enemy = None
@@ -76,7 +83,9 @@ class DungeonGameGUI:
         self.target_range = 45
         self.encounter_ongoing = False
 
-        self.intro_label = tk.Label(root, text="Welcome to the Dungeon RPG!", font=("Helvetica", 18))
+        self.intro_label = tk.Label(
+            root, text="Welcome to the Dungeon RPG!", font=("Helvetica", 18)
+        )
         self.intro_label.pack(pady=10)
 
         self.name_label = tk.Label(root, text="Enter your name:")
@@ -85,35 +94,69 @@ class DungeonGameGUI:
         self.name_entry = tk.Entry(root, font=("Helvetica", 14))
         self.name_entry.pack()
 
-        self.start_button = tk.Button(root, text="Start Game", command=self.start_game, bg="lightgreen")
+        self.start_button = tk.Button(
+            root, text="Start Game", command=self.start_game, bg="lightgreen"
+        )
         self.start_button.pack(pady=10)
 
         self.stats_frame = tk.Frame(root)
-        self.player_stats_label = tk.Label(self.stats_frame, text="", font=("Helvetica", 12))
-        self.enemy_stats_label = tk.Label(self.stats_frame, text="", font=("Courier", 12))
+        self.player_stats_label = tk.Label(
+            self.stats_frame, text="", font=("Helvetica", 12)
+        )
+        self.enemy_stats_label = tk.Label(
+            self.stats_frame, text="", font=("Courier", 12)
+        )
         self.player_stats_label.grid(row=0, column=0, padx=10)
         self.enemy_stats_label.grid(row=0, column=1, padx=10)
 
-        self.status_label = tk.Label(root, text="", font=("Helvetica", 14), wraplength=800)
+        self.status_label = tk.Label(
+            root, text="", font=("Helvetica", 14), wraplength=800
+        )
         self.status_label.pack(pady=10)
 
         self.score_label = tk.Label(root, text="Score: 0", font=("Helvetica", 14))
         self.score_label.pack(pady=5)
 
         self.swing_canvas = tk.Canvas(root, width=400, height=100, bg="white")
-        self.target_zone = self.swing_canvas.create_rectangle(140, 15, 210, 85, fill="red", state="hidden")
-        self.perfect_zone = self.swing_canvas.create_rectangle(170, 25, 180, 75, fill="#52D305", outline="", state="hidden")
-        self.swing_bar = self.swing_canvas.create_rectangle(13, 30, 17, 70, fill="#0000FF", width=0, outline="",state="hidden")
+        self.target_zone = self.swing_canvas.create_rectangle(
+            140, 15, 210, 85, fill="red", state="hidden"
+        )
+        self.perfect_zone = self.swing_canvas.create_rectangle(
+            170, 25, 180, 75, fill="#52D305", outline="", state="hidden"
+        )
+        self.swing_bar = self.swing_canvas.create_rectangle(
+            13, 30, 17, 70, fill="#0000FF", width=0, outline="", state="hidden"
+        )
         self.swing_canvas.pack(pady=10)
 
-        self.controls_label = tk.Label(root, text="Controls:\nAttack: Z\nHeal: H\nFireball: X", font=("Helvetica", 12))
+        self.controls_label = tk.Label(
+            root,
+            text="Controls:\nAttack: Z\nHeal: H\nFireball: X",
+            font=("Helvetica", 12),
+        )
         self.controls_label.pack(side=tk.RIGHT, padx=20)
 
         self.action_frame = tk.Frame(root)
-        self.attack_button = tk.Button(self.action_frame, text="Attack", command=self.start_swing, bg="lightblue")
-        self.heal_button = tk.Button(self.action_frame, text="Heal", command=self.heal, bg="lightgoldenrodyellow")
-        self.shop_button = tk.Button(self.action_frame, text="Shop", command=self.show_shop, state="disabled", bg="grey")
-        self.skip_button = tk.Button(self.action_frame, text="Continue", command=self.continue_encounter, state="disabled", bg="grey")
+        self.attack_button = tk.Button(
+            self.action_frame, text="Attack", command=self.start_swing, bg="lightblue"
+        )
+        self.heal_button = tk.Button(
+            self.action_frame, text="Heal", command=self.heal, bg="lightgoldenrodyellow"
+        )
+        self.shop_button = tk.Button(
+            self.action_frame,
+            text="Shop",
+            command=self.show_shop,
+            state="disabled",
+            bg="grey",
+        )
+        self.skip_button = tk.Button(
+            self.action_frame,
+            text="Continue",
+            command=self.continue_encounter,
+            state="disabled",
+            bg="grey",
+        )
         self.attack_button.grid(row=0, column=0, padx=5)
         self.heal_button.grid(row=0, column=1, padx=5)
         self.shop_button.grid(row=0, column=2, padx=5)
@@ -143,25 +186,59 @@ class DungeonGameGUI:
             return
         if not self.encounter_ongoing:
             self.encounter_ongoing = True
-            encounter_type = random.choices(["enemy", "treasure", "funny"], weights=[5, 1, 1])[0]
+            encounter_type = random.choices(
+                ["enemy", "treasure", "funny", "riddle"], weights=[1, 1, 1, 100]
+            )[0]
             if encounter_type == "enemy":
                 self.encounter_enemy()
             elif encounter_type == "treasure":
                 self.find_treasure()
+            elif encounter_type == "riddle":
+                self.riddle_encounter()
             else:
                 self.funny_encounter()
             self.encounter_ongoing = False
 
     def encounter_enemy(self):
         enemy_data = [
-            {"name": "Goblin", "art": " .--.  \n/    \\\n| () |\n \\__/ ", "health": 80, "attack_power": 15},
-            {"name": "Orc", "art": " .--. \n/    \\\n| () |\n `--' ", "health": 100, "attack_power": 20},
-            {"name": "Troll", "art": " .--. \n/    \\\n| uu |\n `--' ", "health": 120, "attack_power": 25},
-            {"name": "Skeleton", "art": " .--. \n/    \\\n| xx |\n `--' ", "health": 90, "attack_power": 18},
-            {"name": "Zombie", "art": " .--. \n/    \\\n| oo |\n `--' ", "health": 110, "attack_power": 22}
+            {
+                "name": "Goblin",
+                "art": " .--.  \n/    \\\n| () |\n \\__/ ",
+                "health": 80,
+                "attack_power": 15,
+            },
+            {
+                "name": "Orc",
+                "art": " .--. \n/    \\\n| () |\n `--' ",
+                "health": 100,
+                "attack_power": 20,
+            },
+            {
+                "name": "Troll",
+                "art": " .--. \n/    \\\n| uu |\n `--' ",
+                "health": 120,
+                "attack_power": 25,
+            },
+            {
+                "name": "Skeleton",
+                "art": " .--. \n/    \\\n| xx |\n `--' ",
+                "health": 90,
+                "attack_power": 18,
+            },
+            {
+                "name": "Zombie",
+                "art": " .--. \n/    \\\n| oo |\n `--' ",
+                "health": 110,
+                "attack_power": 22,
+            },
         ]
         enemy_choice = random.choice(enemy_data)
-        self.enemy = Enemy(enemy_choice["name"], enemy_choice["art"], enemy_choice["health"], enemy_choice["attack_power"])
+        self.enemy = Enemy(
+            enemy_choice["name"],
+            enemy_choice["art"],
+            enemy_choice["health"],
+            enemy_choice["attack_power"],
+        )
         self.update_stats()
         self.display_message(f"A {self.enemy.name} has appeared!\n{self.enemy.art}")
         self.shop_button.config(state="disabled")
@@ -171,7 +248,9 @@ class DungeonGameGUI:
         found_coins = random.randint(10, 20)
         self.player.coins += found_coins
         winsound.PlaySound("pickupCoin.wav", winsound.SND_ASYNC)
-        self.display_message(f"You found a treasure chest! You collected {found_coins} coins.")
+        self.display_message(
+            f"You found a treasure chest! You collected {found_coins} coins."
+        )
         self.update_stats()
 
     def funny_encounter(self):
@@ -179,10 +258,155 @@ class DungeonGameGUI:
             "You trip over a rock and fall on your face. How embarrassing...",
             "A small dragon hiccups, accidentally setting your hair on fire. Luckily, it goes out quickly.",
             "You accidentally step in a puddle, splashing mud all over your clothes. Nice look!",
-            "A curious squirrel steals your snack while you're not looking. Rude!"
+            "A curious squirrel steals your snack while you're not looking. Rude!",
         ]
         self.display_message(random.choice(funny_encounters))
         self.update_stats()
+
+    def riddle_encounter(self):
+        # Disable buttons during the encounter
+        self.attack_button.config(state="disabled")
+        self.heal_button.config(state="disabled")
+        self.shop_button.config(state="disabled")
+        self.skip_button.config(state="disabled")
+
+        # Show mysterious man dialogue in a popup window
+        popup = tk.Toplevel(self.root)
+        popup.title("Mysterious Encounter")
+        popup.geometry("400x200")
+        popup.resizable(False, False)
+
+        tk.Label(
+            popup,
+            text="A mysterious man appears and challenges you with a riddle...\n"
+            "Solve it correctly to earn a reward, or lose all your coins!",
+            font=("Helvetica", 12),
+            wraplength=350,
+            justify="center",
+        ).pack(pady=20)
+
+        def on_continue():
+            # Close the popup and immediately show the riddle
+            popup.destroy()
+            self.show_riddle()
+
+        tk.Button(
+            popup, text="Continue", font=("Helvetica", 12), command=on_continue
+        ).pack(pady=10)
+
+        popup.grab_set()
+        popup.focus_set()
+
+
+    # Integration into show_riddle()
+    def show_riddle(self):
+
+        # Load riddles if not already loaded
+        if not hasattr(self, "riddles"):
+            self.riddles = []
+            with open("riddles.txt", "r",encoding="utf-8",errors="replace") as file:
+                for line in file:
+                    question_start = line.find("question:") + 9
+                    answer_start = line.find("answer:") + 7
+                    keyword_start = line.find("keyword:") + 8
+                    question = line[question_start:line.find(",", question_start)].strip()
+                    answer = line[answer_start:line.find(",", answer_start)].strip()
+                    keyword = line[keyword_start:line.find(")", keyword_start)].strip()
+                    self.riddles.append((question, answer, keyword))
+
+        # Select a random riddle
+        riddle, correct_answer, keyword = random.choice(self.riddles)
+
+        print(f"Keyword: {keyword}")
+        #print(f"Synonyms: {synonyms}")
+        # Clear the canvas and set up the riddle display
+        if not hasattr(self, "riddle_canvas"):
+            self.riddle_canvas = tk.Canvas(self.root, width=600, height=400, bg="lightgray")
+            self.riddle_canvas.pack(pady=10)
+
+        self.riddle_canvas.delete("all")
+        self.riddle_canvas.create_text(
+            300,
+            50,
+            text=riddle,
+            font=("Helvetica", 14),
+            fill="black",
+            width=580,
+            anchor="center",
+        )
+
+        # Create a text entry box for the answer
+        if not hasattr(self, "riddle_entry"):
+            self.riddle_entry = tk.Entry(self.root, font=("Helvetica", 12))
+            self.riddle_entry.pack(pady=20)
+
+        self.riddle_entry.delete(0, tk.END)  # Clear previous input
+
+        def check_answer():
+            user_input = self.riddle_entry.get().strip().lower()
+            synonyms = set()
+
+            # Find synonyms of the keyword using nltk's WordNet
+            for syn in wordnet.synsets(keyword):
+                for lemma in syn.lemmas():
+                    synonyms.add(lemma.name().lower())
+
+            print(synonyms)
+            ans = '"'+user_input+'"'
+            if ans.lower() == keyword.lower():
+                self.player.healing_potions += 1
+                self.show_result_popup("Correct!", "You earned a free healing potion.")
+            # If not an exact match, check for synonym matches
+            elif ans.lower() in synonyms.lower():
+                self.player.healing_potions += 1
+                self.show_result_popup("Correct!", "You earned a free healing potion.")
+            else:
+                self.player.coins = 0
+                self.show_result_popup("Wrong!", "The mysterious man took all your coins.")
+
+            # Cleanup and trigger the next event
+            self.riddle_entry.delete(0, tk.END)
+            self.riddle_canvas.delete("all")
+            self.attack_button.config(state="normal")
+            self.heal_button.config(state="normal")
+            self.shop_button.config(state="normal")
+            self.skip_button.config(state="normal")
+            self.trigger_event()
+
+        # Create a submit button for user input
+        if not hasattr(self, "submit_button"):
+            self.submit_button = tk.Button(
+                self.root, text="Submit Answer", font=("Helvetica", 12), command=check_answer
+            )
+            self.submit_button.pack(pady=10)
+
+        # Disable main game buttons during the riddle encounter
+        self.attack_button.config(state="disabled")
+        self.heal_button.config(state="disabled")
+        self.shop_button.config(state="disabled")
+        self.skip_button.config(state="disabled")
+
+    def show_result_popup(self, title, message):
+        # Create a popup window to show the result
+        popup = tk.Toplevel(self.root)
+        popup.title(title)
+        popup.geometry("400x200")
+        popup.resizable(False, False)
+
+        tk.Label(
+            popup,
+            text=message,
+            font=("Helvetica", 14),
+            wraplength=350,
+            justify="center",
+        ).pack(pady=20)
+
+        tk.Button(popup, text="OK", font=("Helvetica", 12), command=popup.destroy).pack(
+            pady=10
+        )
+
+        popup.grab_set()
+        popup.focus_set()
 
     def start_swing(self):
         if self.enemy:
@@ -207,7 +431,13 @@ class DungeonGameGUI:
             bar_width = 4
             bar_top = 30
             bar_bottom = 70
-            self.swing_canvas.coords(self.swing_bar, self.swing_position, bar_top, self.swing_position + bar_width, bar_bottom)
+            self.swing_canvas.coords(
+                self.swing_bar,
+                self.swing_position,
+                bar_top,
+                self.swing_position + bar_width,
+                bar_bottom,
+            )
 
             self.root.after(16, self.update_swing_bar)
 
@@ -225,7 +455,9 @@ class DungeonGameGUI:
             if perfect_x1 <= swing_center <= perfect_x2:
                 damage = int(self.player.attack_power * 1.5)
                 self.display_message(f"Perfect hit! You dealt {damage} damage!")
-            elif target_x1 <= swing_x1 <= target_x2 or target_x1 <= swing_x2 <= target_x2:
+            elif (
+                target_x1 <= swing_x1 <= target_x2 or target_x1 <= swing_x2 <= target_x2
+            ):
                 damage = self.player.attack_power
                 self.display_message(f"Good hit! You dealt {damage} damage!")
             else:
@@ -237,7 +469,9 @@ class DungeonGameGUI:
                 winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
                 coins_dropped = self.enemy.drop_coins()
                 self.player.coins += coins_dropped
-                self.display_message(f"{self.enemy.name} has been defeated! You collected {coins_dropped} coins.")
+                self.display_message(
+                    f"{self.enemy.name} has been defeated! You collected {coins_dropped} coins."
+                )
                 self.score += 10
                 self.score_label.config(text=f"Score: {self.score}")
                 self.enemy = None
@@ -253,15 +487,15 @@ class DungeonGameGUI:
             self.enemy.health = 0
             coins_dropped = self.enemy.drop_coins() * 2
             self.player.coins += coins_dropped
-            self.display_message(f"You incinerated the {self.enemy.name} with a fireball! You collected {coins_dropped} coins.")
+            self.display_message(
+                f"You incinerated the {self.enemy.name} with a fireball! You collected {coins_dropped} coins."
+            )
             self.player.fireball_charges -= 1
             self.score += 20
             self.score_label.config(text=f"Score: {self.score}")
             winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
             self.enemy = None
             self.update_stats()
-            self.shop_button.config(state="normal")
-            self.skip_button.config(state="disabled")
         else:
             self.display_message("You don't have any fireball charges left!")
 
@@ -276,15 +510,21 @@ class DungeonGameGUI:
 
     def enemy_turn(self):
         damage = self.enemy.attack(self.player)
-        self.display_message(f"The {self.enemy.name} attacks and deals {damage} damage!")
+        self.display_message(
+            f"The {self.enemy.name} attacks and deals {damage} damage!"
+        )
         self.update_stats()
         self.shop_button.config(state="disabled")
         self.skip_button.config(state="disabled")
 
     def update_stats(self):
-        self.player_stats_label.config(text=f"{self.player.name} - Health: {self.player.health} | Potions: {self.player.healing_potions} | Coins: {self.player.coins} | Fireballs: {self.player.fireball_charges}")
+        self.player_stats_label.config(
+            text=f"{self.player.name} - Health: {self.player.health} | Potions: {self.player.healing_potions} | Coins: {self.player.coins} | Fireballs: {self.player.fireball_charges}"
+        )
         if self.enemy:
-            self.enemy_stats_label.config(text=f"{self.enemy.name} - Health: {self.enemy.health}\n{self.enemy.art}")
+            self.enemy_stats_label.config(
+                text=f"{self.enemy.name} - Health: {self.enemy.health}\n{self.enemy.art}"
+            )
             self.shop_button.config(state="disabled")
             self.skip_button.config(state="disabled")
         else:
@@ -296,19 +536,36 @@ class DungeonGameGUI:
         if self.enemy is None:
             shop_window = tk.Toplevel(self.root)
             shop_window.title("Dungeon Shop")
-            shop_window.geometry("400x150+{}+{}".format(int(self.root.winfo_width()/2 - 200), int(self.root.winfo_height()/2 - 75)))
+            shop_window.geometry(
+                "400x150+{}+{}".format(
+                    int(self.root.winfo_width() / 2 - 200),
+                    int(self.root.winfo_height() / 2 - 75),
+                )
+            )
 
             shop_label = tk.Label(shop_window, text="Welcome to the Dungeon Shop!")
             shop_label.pack(pady=10)
 
-            buy_potion_button = tk.Button(shop_window, text="Buy Healing Potion (10 Coins)", command=self.buy_healing_potion)
-            buy_fireball_button = tk.Button(shop_window, text="Buy Fireball (30 Coins)", command=self.buy_fireball)
-            buy_nothing_button = tk.Button(shop_window, text="Buy Nothing", command=lambda: self.on_shop_close(shop_window))
+            buy_potion_button = tk.Button(
+                shop_window,
+                text="Buy Healing Potion (10 Coins)",
+                command=self.buy_healing_potion,
+            )
+            buy_fireball_button = tk.Button(
+                shop_window, text="Buy Fireball (30 Coins)", command=self.buy_fireball
+            )
+            buy_nothing_button = tk.Button(
+                shop_window,
+                text="Buy Nothing",
+                command=lambda: self.on_shop_close(shop_window),
+            )
             buy_potion_button.pack(pady=5)
             buy_fireball_button.pack(pady=5)
             buy_nothing_button.pack(pady=5)
 
-            shop_window.protocol("WM_DELETE_WINDOW", lambda: self.on_shop_close(shop_window))
+            shop_window.protocol(
+                "WM_DELETE_WINDOW", lambda: self.on_shop_close(shop_window)
+            )
         else:
             self.display_message("You can't shop while fighting an enemy!")
 
@@ -332,12 +589,21 @@ class DungeonGameGUI:
     def display_message(self, message):
         message_window = tk.Toplevel(self.root)
         message_window.title("Message")
-        message_window.geometry("400x150+{}+{}".format(int(self.root.winfo_width()/2 - 200), int(self.root.winfo_height()/2 - 75)))
+        message_window.geometry(
+            "400x150+{}+{}".format(
+                int(self.root.winfo_width() / 2 - 200),
+                int(self.root.winfo_height() / 2 - 75),
+            )
+        )
 
-        message_label = tk.Label(message_window, text=message, font=("Helvetica", 14), wraplength=350)
+        message_label = tk.Label(
+            message_window, text=message, font=("Helvetica", 14), wraplength=350
+        )
         message_label.pack(pady=20)
 
-        ok_button = tk.Button(message_window, text="OK", command=lambda: message_window.destroy())
+        ok_button = tk.Button(
+            message_window, text="OK", command=lambda: message_window.destroy()
+        )
         ok_button.pack(pady=10)
 
         message_window.protocol("WM_DELETE_WINDOW", lambda: message_window.destroy())
@@ -348,6 +614,7 @@ class DungeonGameGUI:
             self.trigger_event()
         else:
             self.display_message("You can't continue while fighting an enemy!")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
