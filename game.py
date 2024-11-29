@@ -1,13 +1,8 @@
 import tkinter as tk
 import random
 import winsound
-from tkinter import messagebox
-import nltk
-from nltk.corpus import wordnet
-nltk.download("wordnet")
-nltk.download("omw-1.4")
-print([lemma.name() for syn in wordnet.synsets("hole") for lemma in syn.lemmas()])
-print([lemma.name() for syn in wordnet.synsets("head") for lemma in syn.lemmas()])
+import string
+
 class Player:
     def __init__(self, name):
         self.name = name
@@ -16,6 +11,18 @@ class Player:
         self.healing_potions = 3
         self.coins = 0
         self.fireball_charges = 0
+        self.level = 1
+        self.xp = 0
+
+    def gain_xp(self, amount):
+        self.xp += amount
+        if self.xp >= self.level * 100:  # Level-up threshold
+            self.xp -= self.level * 100
+            self.level += 1
+            self.health += 20  # Increase health on level-up
+            self.attack_power += 5  # Increase attack power on level-up
+            return True
+        return False
 
     def heal(self):
         if self.healing_potions > 0:
@@ -60,10 +67,14 @@ class Enemy:
             return random.randint(10, 15)
         elif self.name == "Troll":
             return random.randint(15, 20)
-        elif self.name.lower() == "skeleton":
+        elif self.name == "Skeleton":
             return random.randint(8, 12)
-        elif self.name.lower() == "zombie":
+        elif self.name == "Zombie":
             return random.randint(12, 18)
+        elif self.name == "Dragon":
+            return random.randint(20,30)
+        elif self.name == "Demon":
+            return random.randint(20,30)
         else:
             return random.randint(5, 10)
 
@@ -73,7 +84,7 @@ class DungeonGameGUI:
         self.root = root
         self.root.title("Dungeon Master RPG")
         self.root.geometry("1000x1000")
-
+        self.encounter_count = 0
         self.player = None
         self.enemy = None
         self.score = 0
@@ -161,46 +172,7 @@ class DungeonGameGUI:
         self.heal_button.grid(row=0, column=1, padx=5)
         self.shop_button.grid(row=0, column=2, padx=5)
         self.skip_button.grid(row=0, column=3, padx=5)
-
-        self.root.bind("<z>", self.check_timing)
-        self.root.bind("<x>", self.use_fireball)
-
-    def start_game(self):
-        name = self.name_entry.get()
-        if not name:
-            self.display_message("Please enter your name!")
-            return
-        self.player = Player(name)
-        self.display_message(f"Welcome {self.player.name}! Your adventure begins...")
-
-        self.name_label.pack_forget()
-        self.name_entry.pack_forget()
-        self.start_button.pack_forget()
-
-        self.action_frame.pack()
-        self.stats_frame.pack()
-        self.trigger_event()
-
-    def trigger_event(self):
-        if self.player.health <= 0:
-            return
-        if not self.encounter_ongoing:
-            self.encounter_ongoing = True
-            encounter_type = random.choices(
-                ["enemy", "treasure", "funny", "riddle"], weights=[1, 1, 1, 100]
-            )[0]
-            if encounter_type == "enemy":
-                self.encounter_enemy()
-            elif encounter_type == "treasure":
-                self.find_treasure()
-            elif encounter_type == "riddle":
-                self.riddle_encounter()
-            else:
-                self.funny_encounter()
-            self.encounter_ongoing = False
-
-    def encounter_enemy(self):
-        enemy_data = [
+        self.enemy_data = [
             {
                 "name": "Goblin",
                 "art": " .--.  \n/    \\\n| () |\n \\__/ ",
@@ -231,18 +203,87 @@ class DungeonGameGUI:
                 "health": 110,
                 "attack_power": 22,
             },
+            {
+                "name": "Dragon",
+                "art": "  /^\\/^\\\n _|__|  O|\n\\/     /~ \\\n \\____|_____\n       \\_/\\_/",
+                "health": 200,
+                "attack_power": 40
+            },
+            {
+                "name": "Demon",
+                "art": "     ,--.\n  ,--'  '-.\n /     O   \\_\n \\         -,\n  '-._   _,'",
+                "health": 180,
+                "attack_power": 35
+            },
         ]
-        enemy_choice = random.choice(enemy_data)
+        self.root.bind("<z>", self.check_timing)
+        self.root.bind("<x>", self.use_fireball)
+
+    def scale_enemies(self):
+        for enemy_data in self.enemy_data:
+            enemy_data["health"] = int(enemy_data["health"]*1.2)
+            enemy_data["attack_power"] = int(enemy_data["attack_power"]*1.5)
+
+    def start_game(self):
+        name = self.name_entry.get()
+        if not name:
+            self.display_message("Please enter your name!")
+            return
+        self.player = Player(name)
+        self.display_message(f"Welcome {self.player.name}! Your adventure begins...")
+
+        self.name_label.pack_forget()
+        self.name_entry.pack_forget()
+        self.start_button.pack_forget()
+
+        self.action_frame.pack()
+        self.stats_frame.pack()
+        self.trigger_event()
+
+    def trigger_event(self):
+        if self.player.health <= 0:
+            return
+        if not self.encounter_ongoing:
+            self.encounter_ongoing = True
+            self.encounter_count += 1
+            if self.encounter_count % 3 == 0:
+                self.scale_enemies()
+            encounter_type = random.choices(
+                ["enemy", "treasure", "funny", "riddle"], weights=[8, 2, 1, 2]
+            )[0]
+            if encounter_type == "enemy":
+                self.encounter_enemy()
+            elif encounter_type == "treasure":
+                self.find_treasure()
+            elif encounter_type == "riddle":
+                self.riddle_encounter()
+            else:
+                self.funny_encounter()
+            self.encounter_ongoing = False
+
+    def encounter_enemy(self):
+        enemy_choice = random.choice(self.enemy_data)
         self.enemy = Enemy(
             enemy_choice["name"],
             enemy_choice["art"],
             enemy_choice["health"],
             enemy_choice["attack_power"],
         )
+        xp_gained = random.randint(15, 25)
+        if self.enemy.name in ["Dragon", "Demon"]:
+            xp_gained = self.player.level * 100  # Full level-up for Dragon and Demon
+        self.player.gain_xp(xp_gained)
+        coins_gained = self.enemy.drop_coins()
+        self.player.coins += coins_gained
+        level_up_message = "You leveled up!" if self.player.gain_xp(xp_gained) else ""
+        self.display_message(
+            f"A {self.enemy.name} has appeared!\n{self.enemy.art}\n"
+            f"You gained {coins_gained} coins and {xp_gained} XP! {level_up_message}"
+        )
         self.update_stats()
         self.display_message(f"A {self.enemy.name} has appeared!\n{self.enemy.art}")
         self.shop_button.config(state="disabled")
-        self.skip_button.config(state="disabled")
+        self.skip_button.config(state="disabled")`
 
     def find_treasure(self):
         found_coins = random.randint(10, 20)
@@ -297,94 +338,93 @@ class DungeonGameGUI:
         popup.grab_set()
         popup.focus_set()
 
-
-    # Integration into show_riddle()
     def show_riddle(self):
-
         # Load riddles if not already loaded
         if not hasattr(self, "riddles"):
             self.riddles = []
-            with open("riddles.txt", "r",encoding="utf-8",errors="replace") as file:
+            with open("riddles_new.txt", "r", encoding="utf-8", errors="replace") as file:
+                current_riddle = {}
                 for line in file:
-                    question_start = line.find("question:") + 9
-                    answer_start = line.find("answer:") + 7
-                    keyword_start = line.find("keyword:") + 8
-                    question = line[question_start:line.find(",", question_start)].strip()
-                    answer = line[answer_start:line.find(",", answer_start)].strip()
-                    keyword = line[keyword_start:line.find(")", keyword_start)].strip()
-                    self.riddles.append((question, answer, keyword))
+                    line = line.strip()
+                    if line.startswith("Question:"):
+                        current_riddle["question"] = line[len("Question:"):].strip()
+                    elif line.startswith("Answer:"):
+                        current_riddle["answer"] = line[len("Answer:"):].strip()
+                    elif line.startswith("Wrong options:"):
+                        current_riddle["wrong"] = [opt.strip() for opt in line[len("Wrong options:"):].split(",")]
+                        self.riddles.append(current_riddle)
+                        current_riddle = {}  # Reset for the next riddle
 
         # Select a random riddle
-        riddle, correct_answer, keyword = random.choice(self.riddles)
+        riddle = random.choice(self.riddles)
+        question = riddle["question"]
+        correct_answer = riddle["answer"]
+        options = riddle["wrong"] + [correct_answer]
+        random.shuffle(options)
 
-        print(f"Keyword: {keyword}")
-        #print(f"Synonyms: {synonyms}")
         # Clear the canvas and set up the riddle display
         if not hasattr(self, "riddle_canvas"):
             self.riddle_canvas = tk.Canvas(self.root, width=600, height=400, bg="lightgray")
             self.riddle_canvas.pack(pady=10)
-
         self.riddle_canvas.delete("all")
         self.riddle_canvas.create_text(
             300,
             50,
-            text=riddle,
+            text=question,
             font=("Helvetica", 14),
             fill="black",
             width=580,
             anchor="center",
         )
 
-        # Create a text entry box for the answer
-        if not hasattr(self, "riddle_entry"):
-            self.riddle_entry = tk.Entry(self.root, font=("Helvetica", 12))
-            self.riddle_entry.pack(pady=20)
+        # Place answer buttons inside the canvas
+        if hasattr(self, "answer_buttons"):
+            for btn in self.answer_buttons:
+                btn.destroy()
+        self.answer_buttons = []
 
-        self.riddle_entry.delete(0, tk.END)  # Clear previous input
-
-        def check_answer():
-            user_input = self.riddle_entry.get().strip().lower()
-            synonyms = set()
-
-            # Find synonyms of the keyword using nltk's WordNet
-            for syn in wordnet.synsets(keyword):
-                for lemma in syn.lemmas():
-                    synonyms.add(lemma.name().lower())
-
-            print(synonyms)
-            ans = '"'+user_input+'"'
-            if ans.lower() == keyword.lower():
-                self.player.healing_potions += 1
-                self.show_result_popup("Correct!", "You earned a free healing potion.")
-            # If not an exact match, check for synonym matches
-            elif ans.lower() in synonyms.lower():
-                self.player.healing_potions += 1
-                self.show_result_popup("Correct!", "You earned a free healing potion.")
-            else:
-                self.player.coins = 0
-                self.show_result_popup("Wrong!", "The mysterious man took all your coins.")
-
-            # Cleanup and trigger the next event
-            self.riddle_entry.delete(0, tk.END)
-            self.riddle_canvas.delete("all")
-            self.attack_button.config(state="normal")
-            self.heal_button.config(state="normal")
-            self.shop_button.config(state="normal")
-            self.skip_button.config(state="normal")
-            self.trigger_event()
-
-        # Create a submit button for user input
-        if not hasattr(self, "submit_button"):
-            self.submit_button = tk.Button(
-                self.root, text="Submit Answer", font=("Helvetica", 12), command=check_answer
+        for i, option in enumerate(options):
+            btn = tk.Button(
+                self.root,
+                text=option,
+                font=("Helvetica", 12),
+                command=lambda opt=option: self.check_answer(opt, correct_answer),
             )
-            self.submit_button.pack(pady=10)
+            self.answer_buttons.append(btn)
+            self.riddle_canvas.create_window(
+                300, 120 + i * 40, window=btn, anchor="center"
+            )
 
         # Disable main game buttons during the riddle encounter
         self.attack_button.config(state="disabled")
         self.heal_button.config(state="disabled")
         self.shop_button.config(state="disabled")
         self.skip_button.config(state="disabled")
+
+    def check_answer(self, selected_option, correct_answer):
+        # Check if the selected answer is correct
+        if selected_option == correct_answer:
+            winsound.PlaySound("riddle_answered correctly.wav", winsound.SND_ASYNC)
+            self.player.healing_potions += 1
+            self.show_result_popup("Correct!", "You earned a free healing potion.")
+        else:
+            winsound.PlaySound("riddle_answered incorrectly.wav", winsound.SND_ASYNC)
+            self.player.coins = 0
+            self.show_result_popup("Wrong!", "The mysterious man took all your coins.")
+        # Clear the canvas and answer buttons
+        if hasattr(self, "riddle_canvas"):
+            self.riddle_canvas.delete("all")
+        if hasattr(self, "answer_buttons"):
+            for btn in self.answer_buttons:
+                btn.destroy()
+
+        # Re-enable main game buttons
+        self.attack_button.config(state="normal")
+        self.heal_button.config(state="normal")
+        self.shop_button.config(state="normal")
+        self.skip_button.config(state="normal")
+
+        self.trigger_event()
 
     def show_result_popup(self, title, message):
         # Create a popup window to show the result
@@ -407,6 +447,9 @@ class DungeonGameGUI:
 
         popup.grab_set()
         popup.focus_set()
+
+        popup.wait_window()
+
 
     def start_swing(self):
         if self.enemy:

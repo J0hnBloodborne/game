@@ -1,0 +1,63 @@
+Question: What starts with “P” and ends with “E” and has more than 1000 letters?
+Answer: A post office!
+Wrong options: A phone booth, An envelope, A book
+
+Question: What loses its head in the morning but gets it back at night?
+Answer: A pillow
+Wrong options: A clock, A blanket, A bed
+
+Question: Can you name the two days starting with T besides Tuesday and Thursday?
+Answer: Today and tomorrow.
+Wrong options: Tundra and Tropics, Tuesday and Thursday again, The past and the future
+
+Question: What is round on both sides but high in the middle?
+Answer: Ohio.
+Wrong options: A sandwich, A hill, A wheel
+
+Question: If two’s company and three’s a crowd, what are four and five?
+Answer: Nine!
+Wrong options: Chaos, Ten, Seven
+
+Question: What is the center of Gravity?
+Answer: The letter V.
+Wrong options: Mass, Pressure, Force
+
+Question: What is the last thing you take off before bed?
+Answer: Your feet off the floor.
+Wrong options: Your clothes, Your glasses, Your watch
+
+Question: A lawyer, a plumber and a hat maker were walking down the street. Who had the biggest hat?
+Answer: The one with the biggest head.
+Wrong options: The lawyer, The plumber, The hat maker
+
+Question: I have keys but no locks. I have space but no room. You can enter but can’t go outside. What am I?
+Answer: A keyboard
+Wrong options: A piano, A map, A maze
+
+Question: What is next in this sequence: JFMAMJJASON_ ?
+Answer: The letter D. The sequence contains the first letter of each month.
+Wrong options: E, T, J
+
+Question: What comes down but never goes up?
+Answer: Rain
+Wrong options: Fog, Dew, Snow
+
+Question: What belongs to you but others use it more than you do?
+Answer: Your name.
+Wrong options: Your reputation, Your shadow, Your belongings
+
+Question: What tastes better than it smells?
+Answer: A tongue.
+Wrong options: Spices, Soup, Candy
+
+Question: What has teeth but can't bite?
+Answer: A comb.
+Wrong options: A zipper, A saw, A rake
+
+Question: What has 4 eyes but can’t see?
+Answer: Mississippi
+Wrong options: A needle, A blindfold, A storm
+
+Question: What is the longest word in the dictionary?
+Answer: Smiles, because there is a mile between each ‘s’.
+Wrong options: Supercalifragilistic, Antidisestablishmentarianism, Pneumonoultramicroscopicsilicovolcanoconiosis
