@@ -9,7 +9,7 @@ class Player:
         self.attack_power = 35
         self.healing_potions = 3
         self.coins = 0
-        self.fireball_charges = 0
+        self.fireball_charges = 1
         self.level = 1
         self.xp = 0
         self.shield_active = False  # Tracks Shield of Denial effect
@@ -21,19 +21,19 @@ class Player:
         if self.xp >= self.level * 100:  # Level-up threshold
             self.xp -= self.level * 100
             self.level += 1
-            self.health *= 1.2  # Increase health on level-up
+            self.health = int(self.health*1.2)  # Increase health on level-up
             self.attack_power *= 1.2  # Increase attack power on level-up
             return True
         return False
 
-    def heal(self):  # Retain original functionality for internal calls
-        if self.healing_potions > 0:
-            heal_amount = random.randint(25, 40)
-            self.health += heal_amount
-            self.healing_potions -= 1
-            return heal_amount
-        else:
-            return "No Potions"
+    #def heal(self):  # Retain original functionality for internal calls
+    #    if self.healing_potions > 0:
+    #        heal_amount = random.randint(25, 40)
+    #        self.health += heal_amount
+    #        self.healing_potions -= 1
+    #        return heal_amount
+    #    else:
+    #        return "No Potions"
 
 class Enemy:
     def __init__(self, name, art, health, attack_power):
@@ -100,6 +100,8 @@ class DungeonGameGUI:
         self.start_button.pack(pady=10)
 
         self.stats_frame = tk.Frame(root)
+        self.stats_frame = tk.Frame(self.root, width=500, height=200)  # Set custom width and height
+        self.stats_frame.pack(padx=10, pady=10)
         self.player_stats_label = tk.Label(
             self.stats_frame, text="", font=("Helvetica", 12)
         )
@@ -107,6 +109,7 @@ class DungeonGameGUI:
             self.stats_frame, text="", font=("Courier", 12)
         )
         self.player_stats_label.grid(row=0, column=0, padx=10)
+
         self.enemy_stats_label.grid(row=0, column=1, padx=10)
 
         self.status_label = tk.Label(
@@ -128,13 +131,13 @@ class DungeonGameGUI:
             13, 30, 17, 70, fill="#0000FF", width=0, outline="", state="hidden"
         )
         self.dodge_zone = self.swing_canvas.create_rectangle(
-            0, 15, 50, 30, fill="red", state="hidden"
+            0, 15, 10, 30, fill="red", state="hidden"
         )
         self.swing_canvas.pack(pady=10)
 
         self.controls_label = tk.Label(
             root,
-            text="Controls:\nAttack: Z\nDodge: D\nFireball: X",
+            text="Controls:\nAttack: Z\nDodge: D",
             font=("Helvetica", 12),
         )
         self.controls_label.pack(side=tk.RIGHT, padx=20)
@@ -151,31 +154,195 @@ class DungeonGameGUI:
             text="Shop",
             command=self.show_shop,
             state="disabled",
-            bg="grey",
+            bg="lightgoldenrodyellow",
         )
         self.skip_button = tk.Button(
             self.action_frame,
             text="Continue",
             command=self.continue_encounter,
             state="disabled",
-            bg="grey",
+            bg="lightgreen",
         )
         self.attack_button.grid(row=0, column=0, padx=5)
         self.use_item_button.grid(row=0, column=1, padx=5)
         self.shop_button.grid(row=0, column=2, padx=5)
         self.skip_button.grid(row=0, column=3, padx=5)
         self.enemy_data = [
-            {"name": "Goblin", "art": " .--.  \n/    \\\n| () |\n \\__/ ", "health": 80, "attack_power": 15},
-            {"name": "Orc", "art": " .--. \n/    \\\n| () |\n `--' ", "health": 100, "attack_power": 20},
-            {"name": "Troll", "art": " .--. \n/    \\\n| uu |\n `--' ", "health": 120, "attack_power": 25},
-            {"name": "Skeleton", "art": " .--. \n/    \\\n| xx |\n `--' ", "health": 90, "attack_power": 18},
-            {"name": "Zombie", "art": " .--. \n/    \\\n| oo |\n `--' ", "health": 110, "attack_power": 22},
-            {"name": "Dragon", "art": "  /^\\/^\\\n _|__|  O|\n\\/     /~ \\\n \\____|_____\n       \\_/\\_/", "health": 200, "attack_power": 40},
-            {"name": "Demon", "art": "     ,--.\n  ,--'  '-.\n /     O   \\_\n \\         -,\n  '-._   _,'", "health": 180, "attack_power": 35},
+            {
+                "name": "Orc",
+                "health": 100,
+                "attack_power": 20,
+                "art": """
+                         ,      ,
+                        /(.-""-.)\\
+                    |\  \/      \/  /|
+                    | \ / =.  .= \ / |
+                    \( \   o\/o   / )/
+                     \_, '-/  \-' ,_/
+                       /   \__/   \\
+                       \  ______  /
+                     ___\ \|--|/ /___
+                   /`    \      /    `\\
+                  /       '----'       \\
+                """
+            },
+            {
+                "name": "Goblin",
+                "health": 80,
+                "attack_power": 15,
+                "art": """
+                     (\-"```"-/)
+                     //^\   /^\\\\
+                    ;/ ~_\ /_~ \;
+                    |  / \Y/ \  |
+                   (,  \O/ \O/  ,)
+                    |   /   \   |
+                    | (_\._./_) |
+                     \\ \V-.-V/ /
+                      \ `===' /
+                       `-----`
+                """
+            },
+            {
+                "name": "Troll",
+                "health": 120,
+                "attack_power": 25,
+                "art": """
+                       _......._
+                   .-'.'.'.'.'.'.`-.
+                 .'.'.'.'.'.'.'.'.'.`.
+                /.'.'               '.\\
+                |.'    _.--...--._     |
+                \    `._.-.....-._.'   /
+                |     _..- .-. -.._   |
+             .-.'    `.   ((@))  .'   '.-.
+            ( ^ \      `--.   .-'     / ^ )
+             \  /         .   .       \  /
+             /          .'     '.  .-    \\
+            ( _.\    \ (_`-._.-'_)    /._\)
+             `-' \   ' .--.          / `-'
+                 |  / /|_| `-._.'\   |
+                 |   |       |_| |   /-.._
+             _..-\   `.--.______.'  |
+                  \       .....     |
+                   `.  .'      `.  /
+                     \           .'
+                      `-..___..-`
+                """
+            },
+            {
+                "name": "Skeleton",
+                "health": 90,
+                "attack_power": 18,
+                "art": """
+                      .-.
+                     (o.o)
+                      |=|
+                     __|__
+                   //.=|=.\\
+                  // .=|=. \\
+                  \\ .=|=. //
+                   \\(_=_)//
+                    (:| |:)
+                     || ||
+                     () ()
+                     || ||
+                     || ||
+                    ==' '==
+                """
+            },
+            {
+                "name": "Zombie",
+                "health": 110,
+                "attack_power": 22,
+                "art": """
+                                .....
+                               C C  /
+                              /<   /
+               ___ __________/_#__=o
+              /(- /(\_\________   \
+              \ ) \ )_      \o     \
+              /|\ /|\       |'     |
+                            |     _|
+                            /o   __\\
+                           / '     |
+                          / /      |
+                         /_/\______|
+                        (   _(    <
+                         \    \    \\
+
+                          \    \    |
+                           \____\____\\
+                           ____\_\__\_\\
+                         /`   /`     o\
+                         |___ |_______|.
+                """
+            },
+            {
+                "name": "Dragon",
+                "health": 200,
+                "attack_power": 40,
+                "art": """
+                                                                 /===-_---~~~~~~~~~------____
+                                                                |===-~___                _,-'
+                                 -==\\                         `//~\\   ~~~~`---.___.-~~
+                             ______-==|                         | |  \\           _-~`
+                       __--~~~  ,-/-==\\                        | |   `\        ,'
+                    _-~       /'    |  \\                      / /      \      /
+                  .'        /       |   \\                   /' /        \   /'
+                 /  ____  /         |    \`\.__/-~~ ~ \ _ _/'  /          \/'
+                /-'~    ~~~~~---__  |     ~-/~         ( )   /'        _--~`
+                                  \_|      /        _)   ;  ),   __--~~
+                                    '~~--_/      _-~/-  / \   '-~ \\
+                                   {\__--_/}    / \\_>- )<__\      \\
+                                   /'   (_/  _-~  | |__>--<__|      |
+                                  |0  0 _/) )-~     | |__>--<__|      |
+                                  / /~ ,_/       / /__>---<__/      |
+                                 o o _//        /-~_>---<__-~      /
+                                 (^(~          /~_>---<__-      _-~
+                                ,/|           /__>--<__/     _-~
+                             ,//('(          |__>--<__|     /                  .----_
+                            ( ( '))          |__>--<__|    |                 /' _---_~\\
+                         `-)) )) (           |__>--<__|    |               /'  /     ~\`\\
+                        ,/,'//( (             \__>--<__\    \            /'  //        ||
+                      ,( ( ((, ))              ~-__>--<_~-_  ~--____---~' _/'/        /'
+                    `~/  )` ) ,/|                 ~-_~>--<_/-__       __-~ _/
+                  ._-~//( )/ )) `                    ~~-'_/_/ /~~~~~~~__--~
+                   ;'( ')/ ,)(                              ~~~~~~~~~~
+                  ' ') '( (/
+                    '   '  `
+
+                """
+            },
+            {
+                "name": "Demon",
+                "health": 150,
+                "attack_power": 60,
+                "art": """"
+                                            ,-.
+                       ___,---.__          /'|`\          __,---,___
+                    ,-'    \`    `-.____,-'  |  `-.____,-'    //    `-.
+                  ,'        |           ~'\     /`~           |        `.
+                 /      ___//              `. ,'          ,  , \___      \\
+                |    ,-'   `-.__   _         |        ,    __,-'   `-.    |
+                |   /          /\_  `   .    |    ,      _/\          \   |
+                \  |           \ \`-.___ \   |   / ___,-'/ /           |  /
+                 \  \           | `._   `\\  |  //'   _,' |           /  /
+                  `-.\         /'  _ `---'' , . ``---' _  `\         /,-'
+                     ``       /     \    ,='/ \`=.    /     \       ''
+                             |__   /|\_,--.,-.--,--._/|\   __|
+                             /  `./  \\`\ |  |  | /,//' \,'  \\
+                            /   /     ||--+--|--+-/-|     \   \\
+                           |   |     /'\_\_\ | /_/_/`\     |   |
+                            \   \__, \_     `~'     _/ .__/   /
+                             `-._,-'   `-._______,-'   `-._,-'
+                """
+            },
         ]
-        self.root.bind("<z>", self.check_timing)
-        self.root.bind("<d>", lambda event: self.check_dodge(event))
-        #self.root.bind("<x>", self.use_fireball)
+        self.enemy_art_label = tk.Label(self.stats_frame, text="""
+            """
+            , font=("Courier", 8), justify="left")
+        self.enemy_art_label.grid(row=1, column=0, columnspan=4, padx=10, pady=10)  # Placed below health label
 
     def start_game(self):
         name = self.name_entry.get()
@@ -212,7 +379,7 @@ class DungeonGameGUI:
             if self.encounter_count % 3 == 0:
                 self.scale_enemies()
             encounter_type = random.choices(
-                ["enemy", "treasure", "funny", "riddle"], weights=[8, 2, 1, 2]
+                ["enemy", "treasure", "funny", "riddle"], weights=[800, 2, 1, 2]
             )[0]
             if encounter_type == "enemy":
                 self.encounter_enemy()
@@ -226,12 +393,12 @@ class DungeonGameGUI:
 
     def scale_enemies(self):
         for enemy in self.enemy_data:
-            enemy["health"] = enemy["health"] * 1.2
-            enemy["attack_power"] = enemy["attack_power"] * 1.4
+            enemy["health"] = int(enemy["health"] * 1.2)
+            enemy["attack_power"] = int(enemy["attack_power"] * 1.4)
 
 
     def encounter_enemy(self):
-        enemy_choice = random.choices(self.enemy_data, weights = [5,5,5,5,5,1,1])[0]
+        enemy_choice = random.choices(self.enemy_data, weights = [5,5,5,5,5,1,1000])[0]
         self.enemy = Enemy(
             enemy_choice["name"],
             enemy_choice["art"],
@@ -239,8 +406,7 @@ class DungeonGameGUI:
             enemy_choice["attack_power"],
         )
         self.display_message(
-            f"A {self.enemy.name} has appeared!\n{self.enemy.art}\n"
-        )
+            f"A {self.enemy.name} has appeared!",self.enemy.art)
         self.update_stats()
 
     def find_treasure(self):
@@ -381,7 +547,7 @@ class DungeonGameGUI:
         self.use_item_button.config(state="normal")
         self.shop_button.config(state="normal")
         self.skip_button.config(state="normal")
-
+        self.riddle_canvas.delete("all")
         self.trigger_event()
 
     def show_result_popup(self, title, message):
@@ -410,6 +576,7 @@ class DungeonGameGUI:
 
     def start_swing(self):
         if self.enemy:
+            self.root.bind("<z>", self.check_timing)
             self.swinging = True
             self.swing_position = 10
             self.swing_direction = 1
@@ -464,6 +631,7 @@ class DungeonGameGUI:
                 damage = int(self.player.attack_power * 0)
                 self.display_message(f"Missed timing! You dealt only no damage!")
             self.enemy.health -= damage
+            self.root.unbind("<z>")
             self.update_stats()
 
             if self.enemy.health <= 0:
@@ -471,9 +639,9 @@ class DungeonGameGUI:
                 winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
                 coins_dropped = self.enemy.drop_coins()
                 self.player.coins += coins_dropped
-                xp_gained = random.randint(15, 25)
+                xp_gained = random.randint(25, 50)
                 if self.enemy.name in ["Dragon", "Demon"]:
-                    xp_gained = self.player.level * 100  # Full level-up for Dragon and Demon
+                    xp_gained = random.randint(100,150)  # Full level-up for Dragon and Demon
                 level_up_message = "You leveled up!" if self.player.gain_xp(xp_gained) else ""
                 self.display_message(
                     f"{self.enemy.name} has been defeated! You collected {coins_dropped} coins and {xp_gained} XP! {level_up_message}"
@@ -516,6 +684,16 @@ class DungeonGameGUI:
 
     def start_dodge(self):
         """Starts the dodge timer before the dodge sequence."""
+        if self.enemy and self.enemy.name in ["Dragon", "Demon"]:
+            self.required_dodges = 3  # Set the number of dodges required
+        else:
+            self.required_dodges = 1  # Default to one dodge for other enemies
+        self.root.bind("<d>", lambda event: self.check_dodge(event))
+        self.successful_dodges = 0
+        self.failed_dodges = 0
+        self.swing_canvas.itemconfig(self.target_zone, state="hidden")
+        self.swing_canvas.itemconfig(self.perfect_zone, state="hidden")
+        self.swing_canvas.itemconfig(self.swing_bar, state="hidden")
         self.dodge_success = False  # Reset dodge success
         self.start_dodge_timer()
 
@@ -524,7 +702,7 @@ class DungeonGameGUI:
         self.dodge_timer_label = tk.Label(
             self.root, text="3", font=("Helvetica", 18), bg="white"
         )
-        self.dodge_timer_label.place(x=200, y=50)  # Position above the swing canvas
+        self.dodge_timer_label.place(x=450, y=390)  # Position above the swing canvas
         self.countdown_value = 3
         self.update_dodge_timer()
 
@@ -532,7 +710,7 @@ class DungeonGameGUI:
         if self.countdown_value > 0:
             self.dodge_timer_label.config(text=str(self.countdown_value))
             self.countdown_value -= 1
-            self.root.after(1000, self.update_dodge_timer)
+            self.root.after(200, self.update_dodge_timer)
         else:
             self.dodge_timer_label.destroy()  # Remove the timer label
             self.start_dodge_bar()  # Start the dodge sequence
@@ -541,7 +719,7 @@ class DungeonGameGUI:
         """Initializes the dodge bar and randomizes the dodge zone position."""
         random_x = random.randint(50, 300)  # Avoid extreme edges
         self.swing_canvas.coords(
-            self.dodge_zone, random_x, 15, random_x + 50, 85  # Randomize position
+            self.dodge_zone, random_x, 15, random_x + 20, 85  # Randomize position
         )
         self.swing_canvas.itemconfig(self.dodge_zone, state="normal")  # Show dodge zone
         self.swinging = True
@@ -555,7 +733,6 @@ class DungeonGameGUI:
         """Moves the dodge bar to create a timing challenge."""
         if self.swinging:
             if self.swing_position >= 390:  # Stop at the right edge
-                self.swinging = False
                 self.check_dodge(None)  # Automatically evaluate timing
                 return
 
@@ -567,7 +744,7 @@ class DungeonGameGUI:
                 self.swing_position + 4,
                 70,
             )
-            self.root.after(16, self.update_dodge_bar)
+            self.root.after(6, self.update_dodge_bar)
 
     def check_dodge(self, event=None):
         """Checks if the player's timing for dodge was successful."""
@@ -580,11 +757,22 @@ class DungeonGameGUI:
             dodge_x1, _, dodge_x2, _ = self.swing_canvas.coords(self.dodge_zone)
 
             if dodge_x1 <= (swing_x1 + swing_x2) / 2 <= dodge_x2:
+                winsound.PlaySound("dodge.wav", winsound.SND_ASYNC)
                 self.dodge_success = True
+                self.successful_dodges += 1
             else:
                 self.dodge_success = False
+                self.failed_dodges += 1
 
-            self.resolve_enemy_turn()
+            if self.dodge_success == True and self.successful_dodges+self.failed_dodges < self.required_dodges:
+                self.start_dodge_timer()  # Start the next dodge
+            else:
+                if self.successful_dodges == 3 or self.failed_dodges == 0:
+                    self.dodge_success = True
+                else:
+                    self.dodge_success = False
+                self.root.bind("<d>", lambda event: self.check_dodge(event))
+                self.resolve_enemy_turn()  # Finish the dodge sequence
 
     #def enemy_turn(self):
     #    """Handles enemy attacks."""
@@ -607,12 +795,18 @@ class DungeonGameGUI:
         )
         if self.enemy:
             self.enemy_stats_label.config(
-                text=f"{self.enemy.name} - Health: {self.enemy.health}\n{self.enemy.art}"
+                text=f"{self.enemy.name} - Health: {self.enemy.health}"
             )
+            self.enemy_art_label.config(text=self.enemy.art)
+            self.attack_button.config(state = "normal")
+            self.use_item_button.config(state = "normal")
             self.shop_button.config(state="disabled")
             self.skip_button.config(state="disabled")
         else:
             self.enemy_stats_label.config(text="")
+            self.enemy_art_label.config(text="")
+            self.attack_button.config(state = "disabled")
+            self.use_item_button.config(state = "disabled")
             self.shop_button.config(state="normal")
             self.skip_button.config(state="normal")
 
@@ -620,7 +814,7 @@ class DungeonGameGUI:
         if self.enemy is None:
             shop_window = tk.Toplevel(self.root)
             shop_window.title("Dungeon Shop")
-            shop_window.geometry("400x200")
+            shop_window.geometry("400x400")
 
             shop_label = tk.Label(shop_window, text="Welcome to the Dungeon Shop!")
             shop_label.pack(pady=10)
@@ -670,26 +864,31 @@ class DungeonGameGUI:
     def use_item(self):
         item_window = tk.Toplevel(self.root)
         item_window.title("Use Item")
-        item_window.geometry("200x200")
+        item_window.geometry("200x400")
 
         def apply_item(item):
             if item == "Healing Potion" and self.player.healing_potions > 0:
                 self.player.healing_potions -= 1
-                self.player.health += random.randint(25, 40)
+                self.player.health += random.randint(25 + self.player.level*15, 40 + self.player.level*15)
                 winsound.PlaySound("heal.wav", winsound.SND_ASYNC)
                 self.display_message("You used a Healing Potion!")
+                self.start_dodge()
             elif item == "Fireball" and self.player.fireball_charges > 0:
-                coins_dropped = self.enemy.drop_coins() * 2
+                coins_dropped = self.enemy.drop_coins() * 1.5
                 self.player.coins += coins_dropped
                 winsound.PlaySound("fireball.wav", winsound.SND_ASYNC)
+                self.enemy.health = 0
                 self.display_message(f"You incinerated the {self.enemy.name} with a fireball! You collected {coins_dropped} coins.")
                 self.player.fireball_charges -= 1
                 self.score += 20
                 self.score_label.config(text=f"Score: {self.score}")
                 winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
+                self.update_stats()
+                self.trigger_event()
             elif item == "Strength Potion" and self.player.strength_potions > 0:
                 self.player.strength_potion_effect += 3
                 self.display_message("You used a Strength Potion!")
+                self.start_dodge()
             else:
                 self.display_message("You can't use that item right now!")
             self.update_stats()
@@ -701,20 +900,39 @@ class DungeonGameGUI:
                 command=lambda i=item: apply_item(i)
             ).pack(pady=5)
 
-    def display_message(self, message):
+    def display_message(self, message,ascii_art=None):
         message_window = tk.Toplevel(self.root)
         message_window.title("Message")
         message_window.geometry(
-            "400x250+{}+{}".format(
+            "400x400+{}+{}".format(
                 int(self.root.winfo_width() / 2 - 200),
                 int(self.root.winfo_height() / 2 - 75),
             )
         )
+        art_label = tk.Label()
+        if ascii_art:
+            art_label = tk.Label(
+                message_window,
+                text=ascii_art,
+                font=("Courier", 8),  # Monospace font
+                justify="left",  # Left justify
+                anchor="nw",  # Anchor the text to top-left
+                padx=10,  # Add horizontal padding
+                pady=10  # Add vertical padding
+            )
+            art_label.pack(anchor="w")  # Ensure art is left-aligned
 
+        # Message content
         message_label = tk.Label(
-            message_window, text=message, font=("Helvetica", 14), wraplength=350
+            message_window,
+            text=message,
+            font=("Helvetica", 14),
+            wraplength=450,  # Make sure it doesn't overflow horizontally
+            justify="center",  # Center the text
+            padx=10,  # Padding for better alignment
+            pady=10  # Padding to prevent text from touching the window edge
         )
-        message_label.pack(pady=20)
+        message_label.pack(padx=10, pady=10, anchor="center")  # Center the message in the popup
 
         ok_button = tk.Button(
             message_window, text="OK", command=lambda: message_window.destroy()
