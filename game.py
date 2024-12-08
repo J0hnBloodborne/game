@@ -12,28 +12,19 @@ class Player:
         self.fireball_charges = 1
         self.level = 1
         self.xp = 0
-        self.shield_active = False  # Tracks Shield of Denial effect
+        self.shield_active = False
         self.strength_potions = 0
-        self.strength_potion_effect = 0  # Tracks Strength Potion duration
+        self.strength_potion_effect = 0
 
     def gain_xp(self, amount):
         self.xp += amount
-        if self.xp >= self.level * 100:  # Level-up threshold
+        if self.xp >= self.level * 100:
             self.xp -= self.level * 100
             self.level += 1
-            self.health = int(self.health*1.2)  # Increase health on level-up
-            self.attack_power *= 1.2  # Increase attack power on level-up
+            self.health = int(self.health*1.2)
+            self.attack_power *= 1.2
             return True
         return False
-
-    #def heal(self):  # Retain original functionality for internal calls
-    #    if self.healing_potions > 0:
-    #        heal_amount = random.randint(25, 40)
-    #        self.health += heal_amount
-    #        self.healing_potions -= 1
-    #        return heal_amount
-    #    else:
-    #        return "No Potions"
 
 class Enemy:
     def __init__(self, name, art, health, attack_power):
@@ -69,6 +60,7 @@ class Enemy:
 class DungeonGameGUI:
     def __init__(self, root):
         self.root = root
+        root.bind_all("<Button-1>", play_click_sound)
         self.root.title("Dungeon Master RPG")
         self.root.geometry("1000x1000")
         self.encounter_count = 0
@@ -87,20 +79,16 @@ class DungeonGameGUI:
             root, text="Welcome to the Dungeon RPG!", font=("Helvetica", 18)
         )
         self.intro_label.pack(pady=10)
-
         self.name_label = tk.Label(root, text="Enter your name:")
         self.name_label.pack()
-
         self.name_entry = tk.Entry(root, font=("Helvetica", 14))
         self.name_entry.pack()
-
         self.start_button = tk.Button(
             root, text="Start Game", command=self.start_game, bg="lightgreen"
         )
         self.start_button.pack(pady=10)
-
         self.stats_frame = tk.Frame(root)
-        self.stats_frame = tk.Frame(self.root, width=500, height=200)  # Set custom width and height
+        self.stats_frame = tk.Frame(self.root, width=500, height=200)
         self.stats_frame.pack(padx=10, pady=10)
         self.player_stats_label = tk.Label(
             self.stats_frame, text="", font=("Helvetica", 12)
@@ -109,17 +97,13 @@ class DungeonGameGUI:
             self.stats_frame, text="", font=("Courier", 12)
         )
         self.player_stats_label.grid(row=0, column=0, padx=10)
-
         self.enemy_stats_label.grid(row=0, column=1, padx=10)
-
         self.status_label = tk.Label(
             root, text="", font=("Helvetica", 14), wraplength=800
         )
         self.status_label.pack(pady=10)
-
         self.score_label = tk.Label(root, text="Score: 0", font=("Helvetica", 14))
         self.score_label.pack(pady=5)
-
         self.swing_canvas = tk.Canvas(root, width=400, height=100, bg="white")
         self.target_zone = self.swing_canvas.create_rectangle(
             140, 15, 210, 85, fill="red", state="hidden"
@@ -343,7 +327,6 @@ class DungeonGameGUI:
             """
             , font=("Courier", 8), justify="left")
         self.enemy_art_label.grid(row=1, column=0, columnspan=4, padx=10, pady=10)  # Placed below health label
-
     def start_game(self):
         name = self.name_entry.get()
         if not name:
@@ -379,7 +362,7 @@ class DungeonGameGUI:
             if self.encounter_count % 3 == 0:
                 self.scale_enemies()
             encounter_type = random.choices(
-                ["enemy", "treasure", "funny", "riddle"], weights=[800, 2, 1, 2]
+                ["enemy", "treasure", "funny", "riddle"], weights=[10, 2, 1, 2]
             )[0]
             if encounter_type == "enemy":
                 self.encounter_enemy()
@@ -451,7 +434,6 @@ class DungeonGameGUI:
         ).pack(pady=20)
 
         def on_continue():
-            # Close the popup and immediately show the riddle
             popup.destroy()
             self.show_riddle()
 
@@ -477,16 +459,14 @@ class DungeonGameGUI:
                     elif line.startswith("Wrong options:"):
                         current_riddle["wrong"] = [opt.strip() for opt in line[len("Wrong options:"):].split(",")]
                         self.riddles.append(current_riddle)
-                        current_riddle = {}  # Reset for the next riddle
+                        current_riddle = {}
 
-        # Select a random riddle
         riddle = random.choice(self.riddles)
         question = riddle["question"]
         correct_answer = riddle["answer"]
         options = riddle["wrong"] + [correct_answer]
         random.shuffle(options)
 
-        # Clear the canvas and set up the riddle display
         if not hasattr(self, "riddle_canvas"):
             self.riddle_canvas = tk.Canvas(self.root, width=600, height=400, bg="lightgray")
             self.riddle_canvas.pack(pady=10)
@@ -501,7 +481,6 @@ class DungeonGameGUI:
             anchor="center",
         )
 
-        # Place answer buttons inside the canvas
         if hasattr(self, "answer_buttons"):
             for btn in self.answer_buttons:
                 btn.destroy()
@@ -519,14 +498,12 @@ class DungeonGameGUI:
                 300, 120 + i * 40, window=btn, anchor="center"
             )
 
-        # Disable main game buttons during the riddle encounter
         self.attack_button.config(state="disabled")
         self.use_item_button.config(state="disabled")
         self.shop_button.config(state="disabled")
         self.skip_button.config(state="disabled")
 
     def check_answer(self, selected_option, correct_answer):
-        # Check if the selected answer is correct
         if selected_option == correct_answer:
             winsound.PlaySound("riddle_answered correctly.wav", winsound.SND_ASYNC)
             self.player.healing_potions += 1
@@ -535,14 +512,12 @@ class DungeonGameGUI:
             winsound.PlaySound("riddle_answered incorrectly.wav", winsound.SND_ASYNC)
             self.player.coins = 0
             self.show_result_popup("Wrong!", "The mysterious man took all your coins.")
-        # Clear the canvas and answer buttons
         if hasattr(self, "riddle_canvas"):
             self.riddle_canvas.delete("all")
         if hasattr(self, "answer_buttons"):
             for btn in self.answer_buttons:
                 btn.destroy()
 
-        # Re-enable main game buttons
         self.attack_button.config(state="normal")
         self.use_item_button.config(state="normal")
         self.shop_button.config(state="normal")
@@ -551,7 +526,6 @@ class DungeonGameGUI:
         self.trigger_event()
 
     def show_result_popup(self, title, message):
-        # Create a popup window to show the result
         popup = tk.Toplevel(self.root)
         popup.title(title)
         popup.geometry("400x200")
@@ -635,13 +609,12 @@ class DungeonGameGUI:
             self.update_stats()
 
             if self.enemy.health <= 0:
-                # Only reward the player after defeating the enemy
                 winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
                 coins_dropped = self.enemy.drop_coins()
                 self.player.coins += coins_dropped
                 xp_gained = random.randint(25, 50)
                 if self.enemy.name in ["Dragon", "Demon"]:
-                    xp_gained = random.randint(100,150)  # Full level-up for Dragon and Demon
+                    xp_gained = random.randint(100,150)
                 level_up_message = "You leveled up!" if self.player.gain_xp(xp_gained) else ""
                 self.display_message(
                     f"{self.enemy.name} has been defeated! You collected {coins_dropped} coins and {xp_gained} XP! {level_up_message}"
@@ -655,24 +628,6 @@ class DungeonGameGUI:
             else:
                 self.start_dodge()
 
-    #def use_fireball(self, event):
-     #   if self.player.fireball_charges > 0 and self.enemy:
-      #      winsound.PlaySound("fireball.wav", winsound.SND_ASYNC)
-       #     self.enemy.health = 0
-        #    coins_dropped = self.enemy.drop_coins() * 2
-         #   self.player.coins += coins_dropped
-          #  self.display_message(
-           #     f"You incinerated the {self.enemy.name} with a fireball! You collected {coins_dropped} coins."
-            #)
-            #self.player.fireball_charges -= 1
-            #self.score += 20
-            #self.score_label.config(text=f"Score: {self.score}")
-            #winsound.PlaySound("enemy_defeated.wav", winsound.SND_ASYNC)
-            #self.enemy = None
-            #self.update_stats()
-        #else:
-         #   self.display_message("You don't have any fireball charges left!")
-
     def heal(self):
         heal_amount = self.player.heal()
         if heal_amount == "No Potions":
@@ -683,26 +638,24 @@ class DungeonGameGUI:
         self.update_stats()
 
     def start_dodge(self):
-        """Starts the dodge timer before the dodge sequence."""
         if self.enemy and self.enemy.name in ["Dragon", "Demon"]:
-            self.required_dodges = 3  # Set the number of dodges required
+            self.required_dodges = 3
         else:
-            self.required_dodges = 1  # Default to one dodge for other enemies
+            self.required_dodges = 1
         self.root.bind("<d>", lambda event: self.check_dodge(event))
         self.successful_dodges = 0
         self.failed_dodges = 0
         self.swing_canvas.itemconfig(self.target_zone, state="hidden")
         self.swing_canvas.itemconfig(self.perfect_zone, state="hidden")
         self.swing_canvas.itemconfig(self.swing_bar, state="hidden")
-        self.dodge_success = False  # Reset dodge success
+        self.dodge_success = False
         self.start_dodge_timer()
 
     def start_dodge_timer(self):
-        """Displays a countdown timer before starting the dodge sequence."""
         self.dodge_timer_label = tk.Label(
             self.root, text="3", font=("Helvetica", 18), bg="white"
         )
-        self.dodge_timer_label.place(x=450, y=390)  # Position above the swing canvas
+        self.dodge_timer_label.place(x=450, y=390)
         self.countdown_value = 3
         self.update_dodge_timer()
 
@@ -712,28 +665,24 @@ class DungeonGameGUI:
             self.countdown_value -= 1
             self.root.after(200, self.update_dodge_timer)
         else:
-            self.dodge_timer_label.destroy()  # Remove the timer label
-            self.start_dodge_bar()  # Start the dodge sequence
+            self.dodge_timer_label.destroy()
+            self.start_dodge_bar()
 
     def start_dodge_bar(self):
-        """Initializes the dodge bar and randomizes the dodge zone position."""
-        random_x = random.randint(50, 300)  # Avoid extreme edges
-        self.swing_canvas.coords(
-            self.dodge_zone, random_x, 15, random_x + 20, 85  # Randomize position
-        )
-        self.swing_canvas.itemconfig(self.dodge_zone, state="normal")  # Show dodge zone
+        random_x = random.randint(50, 300)
+        self.swing_canvas.coords(self.dodge_zone, random_x, 15, random_x + 20, 85  )
+        self.swing_canvas.itemconfig(self.dodge_zone, state="normal")
         self.swinging = True
-        self.swing_canvas.itemconfig(self.swing_bar, state="normal") # Show timing bar
-        self.swing_direction = 1  # Start moving right
+        self.swing_canvas.itemconfig(self.swing_bar, state="normal")
+        self.swing_direction = 1
         self.swing_position = 10
         self.dodge_success = False
         self.update_dodge_bar()
 
     def update_dodge_bar(self):
-        """Moves the dodge bar to create a timing challenge."""
         if self.swinging:
-            if self.swing_position >= 390:  # Stop at the right edge
-                self.check_dodge(None)  # Automatically evaluate timing
+            if self.swing_position >= 390:
+                self.check_dodge(None)
                 return
 
             self.swing_position += 5
@@ -747,11 +696,10 @@ class DungeonGameGUI:
             self.root.after(6, self.update_dodge_bar)
 
     def check_dodge(self, event=None):
-        """Checks if the player's timing for dodge was successful."""
         if self.swinging:
             self.swinging = False
-            self.swing_canvas.itemconfig(self.dodge_zone, state="hidden")  # Hide dodge zone
-            self.swing_canvas.itemconfig(self.swing_bar, state="hidden")  # Hide the timing bar
+            self.swing_canvas.itemconfig(self.dodge_zone, state="hidden")
+            self.swing_canvas.itemconfig(self.swing_bar, state="hidden")
 
             swing_x1, _, swing_x2, _ = self.swing_canvas.coords(self.swing_bar)
             dodge_x1, _, dodge_x2, _ = self.swing_canvas.coords(self.dodge_zone)
@@ -765,19 +713,14 @@ class DungeonGameGUI:
                 self.failed_dodges += 1
 
             if self.dodge_success == True and self.successful_dodges+self.failed_dodges < self.required_dodges:
-                self.start_dodge_timer()  # Start the next dodge
+                self.start_dodge_timer()
             else:
                 if self.successful_dodges == 3 or self.failed_dodges == 0:
                     self.dodge_success = True
                 else:
                     self.dodge_success = False
                 self.root.bind("<d>", lambda event: self.check_dodge(event))
-                self.resolve_enemy_turn()  # Finish the dodge sequence
-
-    #def enemy_turn(self):
-    #    """Handles enemy attacks."""
-    #    self.start_dodge()  # Initiates the dodge functionality during the enemy turn
-    #    self.root.after(4000, self.resolve_enemy_turn)
+                self.resolve_enemy_turn()
 
     def resolve_enemy_turn(self):
         """Resolves the enemy's attack after the dodge attempt."""
@@ -786,7 +729,7 @@ class DungeonGameGUI:
         else:
             damage = self.enemy.attack(self.player)
             self.display_message(f"The {self.enemy.name} attacks and deals {damage} damage!")
-        self.dodge_success = False  # Reset dodge success for the next turn
+        self.dodge_success = False
         self.update_stats()
 
     def update_stats(self):
@@ -914,25 +857,25 @@ class DungeonGameGUI:
             art_label = tk.Label(
                 message_window,
                 text=ascii_art,
-                font=("Courier", 8),  # Monospace font
-                justify="left",  # Left justify
-                anchor="nw",  # Anchor the text to top-left
-                padx=10,  # Add horizontal padding
-                pady=10  # Add vertical padding
+                font=("Courier", 8),
+                justify="left",
+                anchor="nw",
+                padx=10,
+                pady=10
             )
-            art_label.pack(anchor="w")  # Ensure art is left-aligned
+            art_label.pack(anchor="w")
 
         # Message content
         message_label = tk.Label(
             message_window,
             text=message,
             font=("Helvetica", 14),
-            wraplength=450,  # Make sure it doesn't overflow horizontally
-            justify="center",  # Center the text
-            padx=10,  # Padding for better alignment
-            pady=10  # Padding to prevent text from touching the window edge
+            wraplength=450,
+            justify="center",
+            padx=10,
+            pady=10
         )
-        message_label.pack(padx=10, pady=10, anchor="center")  # Center the message in the popup
+        message_label.pack(padx=10, pady=10, anchor="center")
 
         ok_button = tk.Button(
             message_window, text="OK", command=lambda: message_window.destroy()
@@ -948,6 +891,8 @@ class DungeonGameGUI:
         else:
             self.display_message("You can't continue while fighting an enemy!")
 
+def play_click_sound(event):
+        winsound.PlaySound("click.wav", winsound.SND_ASYNC)
 if __name__ == "__main__":
     root = tk.Tk()
     game_gui = DungeonGameGUI(root)
