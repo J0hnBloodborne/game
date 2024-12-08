@@ -6,10 +6,10 @@ class Player:
     def __init__(self, name):
         self.name = name
         self.health = 150
-        self.attack_power = 35
+        self.attack_power = 40
         self.healing_potions = 3
         self.coins = 0
-        self.fireball_charges = 1
+        self.fireball_charges = 0
         self.level = 1
         self.xp = 0
         self.shield_active = False
@@ -326,7 +326,7 @@ class DungeonGameGUI:
         self.enemy_art_label = tk.Label(self.stats_frame, text="""
             """
             , font=("Courier", 8), justify="left")
-        self.enemy_art_label.grid(row=1, column=0, columnspan=4, padx=10, pady=10)  # Placed below health label
+        self.enemy_art_label.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
     def start_game(self):
         name = self.name_entry.get()
         if not name:
@@ -381,7 +381,7 @@ class DungeonGameGUI:
 
 
     def encounter_enemy(self):
-        enemy_choice = random.choices(self.enemy_data, weights = [5,5,5,5,5,1,1000])[0]
+        enemy_choice = random.choices(self.enemy_data, weights = [5,5,5,5,5,1,1])[0]
         self.enemy = Enemy(
             enemy_choice["name"],
             enemy_choice["art"],
@@ -723,7 +723,6 @@ class DungeonGameGUI:
                 self.resolve_enemy_turn()
 
     def resolve_enemy_turn(self):
-        """Resolves the enemy's attack after the dodge attempt."""
         if self.dodge_success:
             self.display_message(f"You dodged the {self.enemy.name}'s attack!")
         else:
@@ -733,6 +732,19 @@ class DungeonGameGUI:
         self.update_stats()
 
     def update_stats(self):
+        if self.player.health <= 0:
+            if self.player.shield_active:
+                self.player.shield_active = False
+                self.display_message(
+                    f"The Shield of Denial saved you from certain death!"
+                )
+                self.update_stats()
+            else:
+                self.display_message(
+                    f"GAME OVER \n Score : {self.score}"
+                )
+                root.destroy()
+                return
         self.player_stats_label.config(
             text=f"{self.player.name} - Health: {self.player.health} | Potions: {self.player.healing_potions} | Coins: {self.player.coins} | Fireballs: {self.player.fireball_charges} | Level: {self.player.level} | XP: {self.player.xp}"
         )
